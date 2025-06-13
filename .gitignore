@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+
+# VSCode or IDE stuff
+.vscode/
+.idea/
+
+# Backend runtime outputs
+uploads/
+output/
+
+# Frontend
+node_modules/
+
+# Virtual environments
+venv/
+multisense-env/
+
+# OS trash
+.DS_Store

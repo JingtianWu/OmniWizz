@@ -1,0 +1,28 @@
+/* take full height */
+html, body, #root { height: 100%; margin: 0; }
+
+/* flex-center everything */
+.app-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: #f7f7f7;
+}
+
+/* drop zone */
+.drop-box {
+  width: 400px;
+  height: 300px;
+  border: 4px dashed #999;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #555;
+  transition: background 0.25s;
+}
+.drop-box.drag {
+  background: #d8e8ff;
+}
