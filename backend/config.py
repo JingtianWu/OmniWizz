@@ -1,0 +1,1 @@
+TEST_MODE = True  # set to False for full production

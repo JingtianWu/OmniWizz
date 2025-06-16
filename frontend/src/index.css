@@ -1,13 +1,85 @@
-/* take full height */
-html, body, #root { height: 100%; margin: 0; }
+/* layout */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
 
-/* flex-center everything */
 .app-center {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100%;
-  background: #f7f7f7;
+  background: #fafafa;
+}
+
+/* toggles */
+.toggles {
+  margin-bottom: 1rem;
+  display: flex;
+  gap: 1rem;
+}
+.toggles label {
+  cursor: pointer;
+  font-size: .9rem;
+}
+
+/* board */
+.mood-board {
+  position: relative;
+  width: 420px;
+  height: 420px;
+}
+
+/* play circle */
+.play-circle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  cursor: pointer;
+  transition: background .2s;
+}
+.play-circle.playing {
+  background: #cde4ff;
+}
+
+/* tag */
+.tag-item {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-size: .85rem;
+  white-space: nowrap;
+  pointer-events: none;
+  padding: 2px 6px;
+  color: #222;
+  background: transparent;
+}
+
+/* image items */
+.image-item {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  border-radius: 6px;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s;
+  cursor: default;
+}
+.image-item:hover {
+  transform: translate(-50%, -50%) scale(1.1);
+  z-index: 1;
 }
 
 /* drop zone */
@@ -21,8 +93,110 @@ html, body, #root { height: 100%; margin: 0; }
   justify-content: center;
   font-size: 18px;
   color: #555;
-  transition: background 0.25s;
+  transition: background .25s;
 }
 .drop-box.drag {
   background: #d8e8ff;
+}
+
+/* tag (topmost) */
+.tag-item {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-size: .85rem;
+  white-space: nowrap;
+  pointer-events: none;
+  padding: 2px 6px;
+  color: #222;
+  background: transparent;
+  z-index: 3;
+}
+
+/* image (middle layer) */
+.image-item {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  border-radius: 6px;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s;
+  cursor: default;
+  z-index: 2;
+}
+.image-item:hover {
+  transform: translate(-50%, -50%) scale(1.1);
+  z-index: 4;
+}
+
+/* play circle (bottom layer) */
+.play-circle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  cursor: pointer;
+  transition: background .2s;
+  z-index: 1;
+}
+.play-circle.playing {
+  background: #cde4ff;
+}
+
+/* Enlarge images fully on hover */
+.image-item {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  border-radius: 6px;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s, width 0.2s, height 0.2s, z-index 0s;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.image-item:hover {
+  z-index: 5;
+  width: auto;
+  height: auto;
+  max-width: 300px;   /* limit maximum displayed size */
+  max-height: 300px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+}
+
+/* Smooth tag enlargement on hover */
+.tag-item {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-size: .85rem;
+  white-space: nowrap;
+  pointer-events: auto;
+  padding: 2px 6px;
+  color: #222;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  z-index: 3;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.tag-item:hover {
+  font-size: 1.1rem;
+  padding: 4px 10px;
+  z-index: 5;
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.3);
 }
