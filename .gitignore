@@ -22,3 +22,7 @@ multisense-env/
 
 # OS trash
 .DS_Store
+
+# Model weights
+backend/pretrained/
+backend/pretrained/
