@@ -1,51 +1,18 @@
 import React, { useState, useRef, useMemo } from "react";
 import EditorCanvas from "./components/EditorCanvas";
+import VinylIcon from "./components/VinylIcon";
 import "./index.css";
 
-function VinylIcon({ playing, onClick }) {
-  return (
-    <div 
-      className="vinyl-wrapper" 
-      onClick={onClick} 
-      style={{ position: 'relative', width: '140px', height: '140px', cursor: 'pointer' }}
-    >
-      <div className={`vinyl-rotator ${playing ? "spin" : ""}`}>
-        <svg viewBox="0 0 100 100" width="140" height="140">
-          <circle cx="50" cy="50" r="48" fill="#111" stroke="#000" strokeWidth="1" />
-          <circle cx="50" cy="50" r="40" fill="none" stroke="#333" strokeWidth="2" />
-          <circle cx="50" cy="50" r="30" fill="none" stroke="#222" strokeWidth="2" />
-          <circle cx="50" cy="50" r="5" fill="#000" />
-        </svg>
+const VERBS = [
+  "Dreaming in pixels",
+  "Composing wonders",
+  "Weaving sound-scapes",
+  "Painting ambience",
+  "Brewing imagination",
+  "Sketching possibilities",
+  "Sculpting ideas",
+];
 
-        {/* Status lights */}
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }}>
-          {playing ? (
-            <div style={{ display: 'flex', gap: '4px' }}>
-              {[...Array(3)].map((_, i) => (
-                <div key={i} style={{
-                  width: '6px',
-                  height: '6px',
-                  borderRadius: '50%',
-                  backgroundColor: '#00ffcc',
-                  opacity: 0.7,
-                  animation: `pulse ${1 + i * 0.2}s infinite ease-in-out`
-                }} />
-              ))}
-            </div>
-          ) : (
-            <div style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              backgroundColor: '#aaa',
-              opacity: 0.6
-            }} />
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function getPolarPosition(index, total, baseRadius, randomRange = 0) {
   const angle = (2 * Math.PI * index) / total;
@@ -81,6 +48,51 @@ export default function App() {
   /* Pagination */
   const [groupIdx, setGroupIdx] = useState(0);
 
+  const captureAndGenerate = () => {
+    const art = document.querySelector(".artboard");
+    const [bgCanvas, inkCanvas] = art.querySelectorAll("canvas");
+    const audioCanvas = document.querySelector(".wave-strip");
+
+    const W = bgCanvas.width;
+    const H = bgCanvas.height;
+    const hasWave = !!audioCanvas;
+
+    const finalHeight = hasWave ? H + audioCanvas.height : H;
+    const off = document.createElement("canvas");
+    off.width = W;
+    off.height = finalHeight;
+    const ctx = off.getContext("2d");
+
+    ctx.drawImage(bgCanvas, 0, 0);
+    ctx.drawImage(inkCanvas, 0, 0);
+
+    art.querySelectorAll(".textbox").forEach(tb => {
+      const style = window.getComputedStyle(tb);
+      const fontSize = style.fontSize;
+      const fontFamily = style.fontFamily;
+      const color = style.color;
+
+      const artRect = art.getBoundingClientRect();
+      const tbRect = tb.getBoundingClientRect();
+      const x = tbRect.left - artRect.left;
+      const y = tbRect.top - artRect.top + parseInt(fontSize, 10);
+
+      ctx.font = `${fontSize} ${fontFamily}`;
+      ctx.fillStyle = color;
+      ctx.textBaseline = "top";
+      ctx.fillText(tb.innerText, x, y);
+    });
+
+    if (hasWave) {
+      ctx.drawImage(audioCanvas, 0, H);
+    }
+
+    off.toBlob(blob => {
+      const file = new File([blob], "canvas.jpg", { type: "image/jpeg" });
+      handleFile(file);
+    }, "image/jpeg", 0.92);
+  };
+
   /* Toggle handlers */
   const onTagsToggle = e => {
     const v = e.target.checked;
@@ -108,18 +120,9 @@ export default function App() {
     setPlaying(false);
     setStage("loading");
 
-    const verbs = [
-      "Dreaming in pixels",
-      "Composing wonders",
-      "Weaving sound-scapes",
-      "Painting ambience",
-      "Brewing imagination",
-      "Sketching possibilities",
-      "Sculpting ideas"
-    ];
-    setLoadingPhrase(verbs[Math.floor(Math.random() * verbs.length)]);
+    setLoadingPhrase(VERBS[Math.floor(Math.random() * VERBS.length)]);
     const intervalId = setInterval(() => {
-      setLoadingPhrase(verbs[Math.floor(Math.random() * verbs.length)]);
+      setLoadingPhrase(VERBS[Math.floor(Math.random() * VERBS.length)]);
     }, 3000);
 
     const data = new FormData();
@@ -223,61 +226,8 @@ export default function App() {
               <span>Images</span>
             </label>
             <button
-              onClick={() => {
-                const art = document.querySelector(".artboard");
-                const [bgCanvas, inkCanvas] = art.querySelectorAll("canvas");
-                const audioCanvas = document.querySelector(".wave-strip");
-                
-                const W = bgCanvas.width;
-                const H = bgCanvas.height;
-                const hasWave = !!audioCanvas;
-
-                const finalHeight = hasWave ? H + audioCanvas.height : H;
-                const off = document.createElement("canvas");
-                off.width = W;
-                off.height = finalHeight;
-                const ctx = off.getContext("2d");
-
-                ctx.drawImage(bgCanvas, 0, 0);
-                ctx.drawImage(inkCanvas, 0, 0);
-
-                art.querySelectorAll(".textbox").forEach(tb => {
-                  const style = window.getComputedStyle(tb);
-                  const fontSize = style.fontSize;
-                  const fontFamily = style.fontFamily;
-                  const color = style.color;
-
-                  const artRect = art.getBoundingClientRect();
-                  const tbRect = tb.getBoundingClientRect();
-                  const x = tbRect.left - artRect.left;
-                  const y = tbRect.top - artRect.top + parseInt(fontSize, 10);
-
-                  ctx.font = `${fontSize} ${fontFamily}`;
-                  ctx.fillStyle = color;
-                  ctx.textBaseline = "top";
-                  ctx.fillText(tb.innerText, x, y);
-                });
-
-                if (hasWave) {
-                  ctx.drawImage(audioCanvas, 0, H);
-                }
-
-                off.toBlob(blob => {
-                  const file = new File([blob], "canvas.jpg", { type: "image/jpeg" });
-                  handleFile(file);
-                }, "image/jpeg", 0.92);
-              }}
-              style={{
-                background: "linear-gradient(135deg, #667eea, #764ba2)",
-                color: "#fff",
-                border: "none",
-                padding: "12px 28px",
-                borderRadius: "8px",
-                fontWeight: 700,
-                fontSize: "16px",
-                boxShadow: "0 4px 12px rgba(102,126,234,0.3)",
-                cursor: "pointer",
-              }}
+              onClick={captureAndGenerate}
+              className="generate-btn"
             >
               Generate
             </button>
@@ -417,3 +367,4 @@ export default function App() {
     </div>
   );
 }
+

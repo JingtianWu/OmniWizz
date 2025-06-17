@@ -150,22 +150,6 @@ body {
 }
 
 /* Generate button */
-.generate-btn {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-  border: none;
-  padding: 12px 28px;
-  border-radius: 8px;
-  font-weight: 700;
-  font-size: 18px;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.generate-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
 }
 
 /* Color Picker */
