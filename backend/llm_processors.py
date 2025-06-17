@@ -2,6 +2,7 @@ import torch
 from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
 from qwen_vl_utils import process_vision_info
 import re
+import ast
 from diffrhythm_module import extract_prompt_and_lyrics, normalize_lrc
 from config import TEST_MODE
 
@@ -226,35 +227,74 @@ class ImageToTagsProcessor(BaseLLMProcessor):
         return messages
 
     def _postprocess(self, output: str):
+        tags = []
 
-        pattern_en = r"\*\*inspirational tags\*\*:\s*\[(.*?)\]"
-        pattern_cn = r"\*\*灵感标签\*\*:\s*\[(.*?)\]"
+        # Normalize the string to avoid invisible BOM, smart quotes, etc.
+        output = output.strip().replace('\uFEFF', '').replace('“','"').replace('”','"').replace("‘","'").replace("’","'")
 
-        match = re.search(pattern_en, output, re.IGNORECASE)
-        if not match:
-            match = re.search(pattern_cn, output, re.IGNORECASE)
+        # Step 1: Attempt to parse as raw list literal directly
+        try:
+            parsed = ast.literal_eval(output)
+            if isinstance(parsed, list):
+                tags = [str(item).strip() for item in parsed]
+                return tags
+        except (SyntaxError, ValueError):
+            pass  # Continue if not a list literal
 
-        if not match:
-            # Relaxed fallback (without brackets)
-            pattern_relaxed_en = r"\*\*inspirational tags\*\*:\s*(.*)"
-            pattern_relaxed_cn = r"\*\*灵感标签\*\*:\s*(.*)"
+        # Step 2: Define multiple patterns
+        patterns = [
+            r"\*\*inspirational tags\*\*:\s*\[(.*?)\]",
+            r"\*\*灵感标签\*\*:\s*\[(.*?)\]",
+            r"\*\*inspirational tags\*\*:\s*(.*)",
+            r"\*\*灵感标签\*\*:\s*(.*)",
+        ]
 
-            match = re.search(pattern_relaxed_en, output, re.IGNORECASE)
-            if not match:
-                match = re.search(pattern_relaxed_cn, output, re.IGNORECASE)
+        match = None
+        for pattern in patterns:
+            match = re.search(pattern, output, re.IGNORECASE | re.DOTALL)
+            if match:
+                raw = match.group(1).strip()
+                break
 
+        # Step 3: Try to parse matched content as list literal (bracketed or not)
         if match:
-            raw = match.group(1)
-            raw = raw.strip().strip("[]")  # remove brackets if accidentally present
+            # Clean stray brackets if present accidentally
+            raw_cleaned = raw.strip("[]").strip()
 
-            # Split by comma
-            parts = raw.split(',')
+            # Try parsing as list literal again
+            try:
+                parsed = ast.literal_eval(f'[{raw_cleaned}]') if not raw.startswith('[') else ast.literal_eval(raw)
+                if isinstance(parsed, list):
+                    tags = [str(item).strip() for item in parsed]
+                    return tags
+            except (SyntaxError, ValueError):
+                pass  # Fallback to manual splitting
 
-            # Clean each tag: strip whitespace and surrounding * if present
-            tags = [re.sub(r'^\*|\*$', '', part.strip()) for part in parts if part.strip()]
-            return tags
+            # Manual fallback parsing
+            parts = re.split(r',(?![^\[\]]*\])', raw_cleaned)
+            for part in parts:
+                clean = part.strip()
+                # Remove multiple surrounding asterisks (handles *tag*, **tag**, ***tag*** etc.)
+                clean = re.sub(r'^\*+|\*+$', '', clean)
+                # Remove redundant surrounding quotes
+                clean = clean.strip('"').strip("'")
+                if clean:
+                    tags.append(clean)
 
-        return []
+        else:
+            # Step 4: As ultimate fallback, search for any list-like content inside text
+            list_match = re.search(r"\[([^\[\]]+)\]", output)
+            if list_match:
+                list_content = list_match.group(1)
+                parts = list_content.split(',')
+                for part in parts:
+                    clean = part.strip()
+                    clean = re.sub(r'^\*+|\*+$', '', clean)
+                    clean = clean.strip('"').strip("'")
+                    if clean:
+                        tags.append(clean)
+
+        return tags
     
 class ImageToVisualEntitiesProcessor(BaseLLMProcessor):
     """
@@ -318,12 +358,13 @@ class ImageToVisualEntitiesProcessor(BaseLLMProcessor):
         return messages
 
     def _postprocess(self, output: str):
-        # Expect output like: ["tag1", "tag2", ...]
+    # Expect output like: ["tag1", "tag2", ...]
         try:
             import json
             arr = json.loads(output)
-            return [str(x).strip() for x in arr if isinstance(x, str)]
+            return [f"{str(x).strip()} abstract art" for x in arr if isinstance(x, str)]
         except Exception:
+            import re
             # Fallback: simple regex
             tags = re.findall(r'"([^"]+)"', output)
-            return tags
+            return [f"{tag.strip()} abstract art" for tag in tags]

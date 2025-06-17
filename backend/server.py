@@ -67,7 +67,7 @@ async def generate(
             ]
             results["images"] = {
                 "folder": folder,
-                "entities": entities,
+                "entities": [str(e) for e in entities],
                 "images": image_urls,
             }
 
