@@ -23,8 +23,8 @@ multisense/
 ├── frontend/                
 │   ├── public/
 │   └── src/
-│       ├── App.jsx          ← main interface (inputs → outputs)
-│       ├── components/      ← UploadCanvas, AudioPlayer, etc.
+│       ├── App.jsx          ← main interface (inputs → outputs, includes VinylIcon)
+│       ├── components/      ← EditorCanvas, etc.
 │       └── index.css        ← minimal styling
 │
 ├── requirements.txt         
