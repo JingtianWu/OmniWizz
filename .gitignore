@@ -12,6 +12,7 @@ __pycache__/
 # Backend runtime outputs
 uploads/
 output/
+test-output/
 
 # Frontend
 node_modules/
