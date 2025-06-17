@@ -1,0 +1,356 @@
+/* Global background */
+body {
+  background: linear-gradient(135deg, #2a0a4d, #130f40);
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: white;
+}
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 20px;
+  background: rgba(20, 20, 30, 0.9);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  margin-bottom: 12px;
+  margin-top: 12px;
+  position: relative;
+  z-index: 10;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+}
+
+.tool-wrapper {
+  position: relative;
+}
+
+.tool-slider {
+  position: absolute;
+  top: 50px;
+  left: 0;
+  width: 80px;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.85);
+  padding: 8px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.tool-slider input[type="range"] {
+  width: 100%;
+}
+
+/* Main Board Container */
+.board-container {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  margin: 0 auto;
+  width: fit-content;
+  position: relative;
+  z-index: 1;
+}
+
+/* Artboard */
+.artboard {
+  position: relative;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* Waveform Strip */
+.wave-strip {
+  background: linear-gradient(to bottom, #14141e, #0a0a14);
+  border-top: 1px solid rgba(100, 200, 255, 0.3);
+  margin-top: 6px;
+  border-radius: 12px;
+}
+
+/* Drop zones */
+.drop-zone,
+.wave-drop-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.drop-text {
+  background: rgba(102, 126, 234, 0.9);
+  color: white;
+  padding: 16px 32px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+/* Tool buttons */
+.tool-group {
+  display: flex;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 4px 8px;
+  border-radius: 12px;
+}
+
+.tool-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tool-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+}
+
+.tool-btn.active {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* Divider between groups */
+.divider {
+  width: 1px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 0 12px;
+}
+
+/* Generate button */
+.generate-btn {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 18px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.generate-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+/* Color Picker */
+.color-picker-wrapper {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: rgb(0, 0, 0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.color-preview {
+  width: 25px;
+  height: 25px;
+  pointer-events: none;
+}
+
+.color-picker {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* Textboxes */
+.textbox {
+  outline: none;
+  min-width: 50px;
+  min-height: 1.2em;
+  position: relative;
+  transition: box-shadow 0.2s ease;
+  
+  /* CRITICAL: Add consistent padding, margin, and box-sizing for all states */
+  padding: 8px 12px;
+  margin: 0;
+  box-sizing: border-box;
+  
+  /* Consistent typography */
+  line-height: 1.2;
+  vertical-align: top;
+  
+  /* Consistent layout properties */
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  
+  /* Text handling */
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  overflow: hidden;
+  
+  /* Default interaction state */
+  user-select: none;
+  cursor: pointer;
+}
+
+/* Active state - only change visual indicators, not layout */
+.textbox.active {
+  /* Keep same padding/margin/sizing as base */
+  /* Only change visual feedback */
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.4);
+  border-color: rgba(102, 126, 234, 0.3);
+}
+
+/* Editing state - only change interaction, not layout */
+.textbox.editing {
+  /* Keep same padding/margin/sizing as base */
+  /* Only change interaction and visual feedback */
+  user-select: text;
+  cursor: text;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.6);
+  border-color: rgba(102, 126, 234, 0.5);
+  background: rgba(255, 255, 255, 0.98); /* Slightly more opaque for editing */
+}
+
+/* Font size toolbar */
+.size-toolbar {
+  position: absolute;
+  top: -48px;
+  left: -1px; /* Align with textbox border */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.85);
+  padding: 6px 12px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 15;
+}
+
+.size-toolbar button {
+  background: transparent;
+  border: none;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.2s ease;
+}
+
+.size-toolbar button:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Font size input */
+.font-size-input {
+  width: 50px;
+  text-align: center;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.font-size-input:focus {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Resize handle */
+.resize-handle {
+  position: absolute;
+  bottom: -11px; /* Adjust to align with new border */
+  right: -11px;
+  width: 20px;
+  height: 20px;
+  background: rgba(255, 152, 0, 0.8);
+  border-radius: 50%;
+  cursor: nw-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: white;
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+  transition: background 0.2s ease;
+}
+
+.resize-handle:hover {
+  background: rgba(255, 152, 0, 1);
+}
+
+/* Sliders styling */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  border: none;
+}

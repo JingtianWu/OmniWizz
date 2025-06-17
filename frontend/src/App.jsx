@@ -1,32 +1,84 @@
-import React, { useState, useRef } from "react";
-import UploadCanvas from "./components/UploadCanvas";
+import React, { useState, useRef, useMemo } from "react";
+import EditorCanvas from "./components/EditorCanvas";
 import "./index.css";
+
+function VinylIcon({ playing, onClick }) {
+  return (
+    <div 
+      className="vinyl-wrapper" 
+      onClick={onClick} 
+      style={{ position: 'relative', width: '140px', height: '140px', cursor: 'pointer' }}
+    >
+      <div className={`vinyl-rotator ${playing ? "spin" : ""}`}>
+        <svg viewBox="0 0 100 100" width="140" height="140">
+          <circle cx="50" cy="50" r="48" fill="#111" stroke="#000" strokeWidth="1" />
+          <circle cx="50" cy="50" r="40" fill="none" stroke="#333" strokeWidth="2" />
+          <circle cx="50" cy="50" r="30" fill="none" stroke="#222" strokeWidth="2" />
+          <circle cx="50" cy="50" r="5" fill="#000" />
+        </svg>
+
+        {/* Status lights */}
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }}>
+          {playing ? (
+            <div style={{ display: 'flex', gap: '4px' }}>
+              {[...Array(3)].map((_, i) => (
+                <div key={i} style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  backgroundColor: '#00ffcc',
+                  opacity: 0.7,
+                  animation: `pulse ${1 + i * 0.2}s infinite ease-in-out`
+                }} />
+              ))}
+            </div>
+          ) : (
+            <div style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              backgroundColor: '#aaa',
+              opacity: 0.6
+            }} />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function getPolarPosition(index, total, baseRadius, randomRange = 0) {
+  const angle = (2 * Math.PI * index) / total;
+  const randomOffset = (Math.random() - 0.5) * randomRange;
+  const radius = baseRadius + randomOffset;
+  const x = 50 + radius * Math.cos(angle);
+  const y = 50 + radius * Math.sin(angle);
+  return { x, y };
+}
 
 export default function App() {
   /* Toggles */
-  const [doTags,   setDoTags]   = useState(true);
-  const [doMusic,  setDoMusic]  = useState(true);
+  const [doTags, setDoTags]     = useState(true);
+  const [doMusic, setDoMusic]   = useState(true);
   const [doImages, setDoImages] = useState(true);
 
   /* Language */
   const [language, setLanguage] = useState("en");
 
   /* Stage */
-  const [stage,    setStage]    = useState("idle");
+  const [stage, setStage]             = useState("idle");
+  const [loadingPhrase, setLoadingPhrase] = useState("");
 
   /* Data */
-  const [tags,     setTags]     = useState([]);
-  const [audioUrl, setAudioUrl] = useState("");
-  const [images,   setImages]   = useState([]);
+  const [tags, setTags]       = useState([]);
+  const [audioUrl, setAudioUrl]   = useState("");
+  const [images, setImages]   = useState([]);
 
   /* Audio */
   const audioRef = useRef(null);
   const [playing, setPlaying] = useState(false);
 
-  /* Loading */
-  const [loading, setLoading] = useState(false);
-
-  /* Group index for tags */
+  /* Pagination */
   const [groupIdx, setGroupIdx] = useState(0);
 
   /* Toggle handlers */
@@ -46,173 +98,321 @@ export default function App() {
     setDoImages(v);
   };
 
-  /* Helpers */
-  function fileToFormData(file) {
-    const d = new FormData();
-    d.append("file", file);
-    return d;
-  }
-
-  /* Upload + Generate */
+  /* File upload + generate */
   async function handleFile(file) {
     if (!file || (!doTags && !doMusic && !doImages)) return;
 
-    // reset
     setTags([]);
     setAudioUrl("");
     setImages([]);
     setPlaying(false);
     setStage("loading");
-    setLoading(true);
 
-    const data = fileToFormData(file);
-    // build modes param
-    const modesList = [
-      doMusic  ? "music"  : null,
-      doTags   ? "tags"   : null,
-      doImages ? "images" : null,
-    ].filter(Boolean).join(",");
+    const verbs = [
+      "Dreaming in pixels",
+      "Composing wonders",
+      "Weaving sound-scapes",
+      "Painting ambience",
+      "Brewing imagination",
+      "Sketching possibilities",
+      "Sculpting ideas"
+    ];
+    setLoadingPhrase(verbs[Math.floor(Math.random() * verbs.length)]);
+    const intervalId = setInterval(() => {
+      setLoadingPhrase(verbs[Math.floor(Math.random() * verbs.length)]);
+    }, 3000);
+
+    const data = new FormData();
+    data.append("file", file);
+    const modes = [doMusic && "music", doTags && "tags", doImages && "images"]
+      .filter(Boolean)
+      .join(",");
 
     try {
-      const res = await fetch(
-        `/generate?modes=${modesList}&language=${language}`,
-        {
-          method: "POST",
-          body: data,
-        }
-      );
+      const res = await fetch(`/generate?modes=${modes}&language=${language}`, {
+        method: "POST",
+        body: data,
+      });
       const j = await res.json();
 
-      // parse tags
       if (j.tags) {
         const arr = j.tags.tags ?? j.tags;
         setTags(Array.isArray(arr) ? arr : []);
       }
-      // parse music
       if (j.music) {
         setAudioUrl(j.music.audio_url);
       }
-      // parse images
       if (j.images) {
         const arr = j.images.images ?? j.images;
         setImages(Array.isArray(arr) ? arr : []);
       }
     } catch (err) {
       console.error("Generation failed:", err);
+    } finally {
+      clearInterval(intervalId);
+      setStage("done");
     }
-
-    setLoading(false);
-    setStage("done");
   }
 
-  /* Tag grouping */
-  function currentGroup() {
+  /* Memoized slices */
+  const visibleTags = useMemo(() => {
     const size = 8;
-    const groups = Math.ceil(tags.length / size) || 1;
+    const groups = Math.max(1, Math.ceil(tags.length / size));
     const idx = groupIdx % groups;
-    const start = idx * size;
-    return tags.slice(start, start + size);
-  }
-  const visibleTags = currentGroup();
+    return tags.slice(idx * size, idx * size + size);
+  }, [tags, groupIdx]);
 
-  /* Idle state */
+  const visibleImages = useMemo(() => {
+    const size = 8;
+    const groups = Math.max(1, Math.ceil(images.length / size));
+    const idx = groupIdx % groups;
+    return images.slice(idx * size, idx * size + size);
+  }, [images, groupIdx]);
+
+  /* Memoized random positions */
+  const tagPositions = useMemo(() => {
+    return visibleTags.map((_, i) => {
+      const { x, y } = getPolarPosition(i, visibleTags.length, 50, 30);
+      return { x, y };
+    });
+  }, [visibleTags]);
+
+  const imagePositions = useMemo(() => {
+    return visibleImages.map((_, i) => {
+      const { x, y } = getPolarPosition(i, visibleImages.length, 50, 30);
+      const rotation = Math.floor(Math.random() * 12 - 6);
+      return { x, y, rotation };
+    });
+  }, [visibleImages]);
+
+  /* RENDER */
   if (stage === "idle") {
     return (
-      <div className="app-center">
-        <div className="toggles">
-          <label>
-            <input type="checkbox" checked={doTags}   onChange={onTagsToggle}  /> Tags
-          </label>
-          <label>
-            <input type="checkbox" checked={doMusic}  onChange={onMusicToggle} /> Music
-          </label>
-          <label>
-            <input type="checkbox" checked={doImages} onChange={onImagesToggle}/> Images
-          </label>
-          <label className="language-selector">
-            Language:
-            <select value={language} onChange={e => setLanguage(e.target.value)}>
-              <option value="en">English</option>
-              <option value="zh">中文</option>
-            </select>
-          </label>
-        </div>
-        <UploadCanvas onDrop={handleFile} />
-      </div>
-    );
-  }
-
-  /* Loading state */
-  if (stage === "loading") {
-    return (
-      <div className="app-center">
-        {doTags   && <div>Generating tags…</div>}
-        {doMusic  && <div>Generating music…</div>}
-        {doImages && <div>Generating images…</div>}
-      </div>
-    );
-  }
-
-  /* Done state */
-  return (
-    <div className="app-center">
-      <div className="mood-board">
-        {/* Music center */}
-        {doMusic && (
-          <div
-            className={`play-circle ${playing ? "playing" : ""}`}
-            onClick={() => {
-              const groups = Math.ceil(tags.length / 8) || 1;
-              setGroupIdx(g => (g + 1) % groups);
-              if (!audioRef.current) return;
-              playing ? audioRef.current.pause() : audioRef.current.play();
-            }}
-          >
-            {playing ? "⏸" : "▶️"}
-          </div>
-        )}
-        {audioUrl && (
-          <audio
-            ref={audioRef}
-            src={audioUrl}
-            onPlay={() => setPlaying(true)}
-            onPause={() => setPlaying(false)}
-            onEnded={() => setPlaying(false)}
-            style={{ display: "none" }}
+      <div className="app-center-container">
+        <div style={{ display: "flex", gap: "2rem", alignItems: "flex-start" }}>
+          <EditorCanvas 
+            onSubmit={handleFile}
+            language={language}
+            setLanguage={setLanguage}
           />
-        )}
+          <div style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "1.5rem",
+            background: "rgba(20, 20, 30, 0.9)",
+            backdropFilter: "blur(20px)",
+            border: "1px solid rgba(255,255,255,0.15)",
+            borderRadius: "16px",
+            padding: "24px",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+            minWidth: "200px",
+            alignSelf: "flex-end",
+          }}>
+            <h3 style={{ fontSize: "1.1rem", fontWeight: 600 }}>Options</h3>
+            <div className="options-divider" />
+            <label className="option-toggle">
+              <input type="checkbox" checked={doTags}   onChange={onTagsToggle}   />
+              <span>Tags</span>
+            </label>
+            <label className="option-toggle">
+              <input type="checkbox" checked={doMusic}  onChange={onMusicToggle}  />
+              <span>Music</span>
+            </label>
+            <label className="option-toggle">
+              <input type="checkbox" checked={doImages} onChange={onImagesToggle} />
+              <span>Images</span>
+            </label>
+            <button
+              onClick={() => {
+                const art = document.querySelector(".artboard");
+                const [bgCanvas, inkCanvas] = art.querySelectorAll("canvas");
+                const audioCanvas = document.querySelector(".wave-strip");
+                
+                const W = bgCanvas.width;
+                const H = bgCanvas.height;
+                const hasWave = !!audioCanvas;
 
-        {/* Tags ring */}
-        {doTags &&
-          visibleTags.map((tag, i) => {
-            const angle = (2 * Math.PI * i) / visibleTags.length + (Math.random() - 0.5) * 0.3;
-            const radius = 25 + Math.random() * 23;
-            const x = 50 + radius * Math.cos(angle);
-            const y = 50 + radius * Math.sin(angle);
-            return (
-              <div key={`tag-${i}`} className="tag-item" style={{ left: `${x}%`, top: `${y}%` }}>
-                {tag}
-              </div>
-            );
-          })}
+                const finalHeight = hasWave ? H + audioCanvas.height : H;
+                const off = document.createElement("canvas");
+                off.width = W;
+                off.height = finalHeight;
+                const ctx = off.getContext("2d");
 
-        {/* Images ring */}
-        {doImages &&
-          images.map((src, i) => {
-            const angle = (2 * Math.PI * i) / images.length + (Math.random() - 0.5) * 0.3;
-            const radius = 25 + Math.random() * 23;
-            const x = 50 + radius * Math.cos(angle);
-            const y = 50 + radius * Math.sin(angle);
-            return (
-              <img
-                key={`img-${i}`}
-                src={src}
-                alt=""
-                className="image-item"
-                style={{ left: `${x}%`, top: `${y}%` }}
+                ctx.drawImage(bgCanvas, 0, 0);
+                ctx.drawImage(inkCanvas, 0, 0);
+
+                art.querySelectorAll(".textbox").forEach(tb => {
+                  const style = window.getComputedStyle(tb);
+                  const fontSize = style.fontSize;
+                  const fontFamily = style.fontFamily;
+                  const color = style.color;
+
+                  const artRect = art.getBoundingClientRect();
+                  const tbRect = tb.getBoundingClientRect();
+                  const x = tbRect.left - artRect.left;
+                  const y = tbRect.top - artRect.top + parseInt(fontSize, 10);
+
+                  ctx.font = `${fontSize} ${fontFamily}`;
+                  ctx.fillStyle = color;
+                  ctx.textBaseline = "top";
+                  ctx.fillText(tb.innerText, x, y);
+                });
+
+                if (hasWave) {
+                  ctx.drawImage(audioCanvas, 0, H);
+                }
+
+                off.toBlob(blob => {
+                  const file = new File([blob], "canvas.jpg", { type: "image/jpeg" });
+                  handleFile(file);
+                }, "image/jpeg", 0.92);
+              }}
+              style={{
+                background: "linear-gradient(135deg, #667eea, #764ba2)",
+                color: "#fff",
+                border: "none",
+                padding: "12px 28px",
+                borderRadius: "8px",
+                fontWeight: 700,
+                fontSize: "16px",
+                boxShadow: "0 4px 12px rgba(102,126,234,0.3)",
+                cursor: "pointer",
+              }}
+            >
+              Generate
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (stage === "loading") {
+    const modesLine = [doTags && "tagging", doMusic && "scoring", doImages && "illustrating"]
+      .filter(Boolean)
+      .join(" · ");
+    return (
+      <div className="loading-overlay" role="status" aria-live="polite">
+        <div className="loader-ring"><div/><div/><div/><div/></div>
+        <p className="loader-text">{loadingPhrase}…</p>
+        {modesLine && <p className="loader-sub">{modesLine}</p>}
+      </div>
+    );
+  }
+
+  return (
+    <div className="app-right-container">
+      <div className="board-frame">
+        <div className="center-cluster">
+
+          {doMusic && (
+            <>
+              <VinylIcon
+                playing={playing}
+                onClick={() => {
+                  if (!audioRef.current) return;
+                  playing ? audioRef.current.pause() : audioRef.current.play();
+                }}
               />
-            );
-          })}
+              {audioUrl && (
+                <audio
+                  ref={audioRef}
+                  src={audioUrl}
+                  onPlay={() => setPlaying(true)}
+                  onPause={() => setPlaying(false)}
+                  onEnded={() => setPlaying(false)}
+                  style={{ display: "none" }}
+                />
+              )}
+            </>
+          )}
+
+          {doImages && (
+            <div className="image-cloud">
+              {imagePositions.map(({ x, y, rotation }, i) => (
+                <img
+                  key={i}
+                  src={visibleImages[i]}
+                  alt=""
+                  className="cloud-img"
+                  draggable={false}
+                  style={{
+                    left: `${x}%`,
+                    top: `${y}%`,
+                    "--r": `${rotation}deg`,
+                    userSelect: "none",
+                    WebkitUserDrag: "none"
+                  }}
+                />
+              ))}
+            </div>
+          )}
+
+          {doTags && (
+            <div className="tag-cloud">
+              {tagPositions.map(({ x, y }, i) => (
+                <span
+                  key={i}
+                  className="cloud-tag"
+                  draggable={false}
+                  style={{
+                    left: `${x}%`, 
+                    top: `${y}%`,
+                    userSelect: "none"
+                  }}
+                >
+                  {visibleTags[i]}
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div style={{
+            position: "absolute",
+            bottom: "-110px",
+            display: "flex",
+            gap: "1rem",
+            zIndex: 9999,
+          }}>
+            <button
+              onClick={() => {
+                const groups = Math.max(1, Math.ceil(tags.length / 8));
+                setGroupIdx(g => (g - 1 + groups) % groups);
+              }}
+              style={{
+                fontSize: "1.2rem",
+                padding: "0.3rem 0.6rem",
+                borderRadius: "50%",
+                border: "none",
+                background: "rgba(255,255,255,0.15)",
+                backdropFilter: "blur(10px)",
+                color: "#fff",
+                cursor: "pointer",
+              }}
+            >
+              &#x276E;
+            </button>
+            <button
+              onClick={() => {
+                const groups = Math.max(1, Math.ceil(tags.length / 8));
+                setGroupIdx(g => (g + 1) % groups);
+              }}
+              style={{
+                fontSize: "1.2rem",
+                padding: "0.3rem 0.6rem",
+                borderRadius: "50%",
+                border: "none",
+                background: "rgba(255,255,255,0.15)",
+                backdropFilter: "blur(10px)",
+                color: "#fff",
+                cursor: "pointer",
+              }}
+            >
+              &#x276F;
+            </button>
+          </div>
+
+        </div>
       </div>
     </div>
   );

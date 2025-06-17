@@ -21,13 +21,17 @@ def extract_prompt_and_lyrics(output, lang='en'):
             lyrics.group(1).strip() if lyrics else "")
 
 def normalize_lrc(raw_lyrics):
-    pattern = re.compile(r"(\[\d{2}:\d{2}\.\d{2}\])")
-    parts = pattern.split(raw_lyrics)
+    timestamp_pattern = re.compile(r"(\[\d{2}:\d{2}\.\d{2}\])")
+    parts = timestamp_pattern.split(raw_lyrics)
     lines = []
+    
     for i in range(1, len(parts), 2):
-        ts, txt = parts[i], parts[i+1].strip() if (i+1)<len(parts) else ""
+        ts = parts[i]
+        txt = parts[i+1].strip() if (i+1) < len(parts) else ""
+        txt = re.sub(r"[\[\]]+", "", txt).strip()
         if txt:
             lines.append(f"{ts}{txt}")
+            
     return "\n".join(lines)
 
 def run_inference(assistant_reply: str, out_dir: Path) -> str:

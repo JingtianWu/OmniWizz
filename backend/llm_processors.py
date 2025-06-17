@@ -71,6 +71,7 @@ class BaseLLMProcessor:
 
     def process(self):
         raw = self.generate()
+        print("\n=== RAW MODEL OUTPUT ===\n", raw, "\n=== END ===")
         return self._postprocess(raw)
 
     def _build_messages(self):
@@ -182,32 +183,42 @@ class ImageToTagsProcessor(BaseLLMProcessor):
 
     def _build_messages(self):
         if self.language == "en":
-            prompt = (
-                "You are a multimodal music assistant. Based on the provided image, analyze its content and generate inspirational tags that can guide music producers. "
-                "Each tag should reflect the mood, atmosphere, or potential musical direction inspired by the image. "
-                "Be concise, vivid, and evocative. "
-                "Generate at least 24 tags. "
-                "Your output must strictly follow the following format:\n\n"
-                "**inspirational tags**: [tag1, tag2, tag3, ..., tagN]\n\n"
-                "Example:\n"
-                "**inspirational tags**: [crystal sunrise shimmer, echo-lag surf textures, aurora pad resonance, liquid rhythm cascade, heartbeat echo, post-rain moss]"
+            content = (
+                "You are a multimodal creativity assistant for music producers.\n"
+                "Given the provided image, analyze its mood, visual features, atmosphere, and possible sonic inspirations.\n"
+                "Your task is to generate at least 24 diverse inspirational tags that combine:\n"
+                "- Visual elements (colors, scenery, light, motion, emotion)\n"
+                "- Textural impressions (surfaces, ambience, energy)\n"
+                "- Musical or production ideas (textures, instrumentation, rhythm, structure)\n\n"
+                "Do not focus only on existing genres or styles. Instead, combine abstract imagery, mood, and sonic inspiration freely to give the composer new creative directions.\n"
+                "Tags may include combinations like: 'crystal sunrise shimmer', 'echo-lag surf textures', 'aurora pad resonance', 'liquid rhythm cascade', 'salt-wind percussion', 'twilight pulse drift', etc.\n\n"
+                "Strict formatting rules:\n"
+                "1. Output only in the following format:\n"
+                "**inspirational tags**: [tag1, tag2, tag3, tag4, tag5, tag6, tag7, tag8]\n"
+                "2. Do not add explanations, commentary, or any other text before or after.\n"
+                "3. Do not number the tags. Separate them by commas inside the brackets."
             )
         else:
-            prompt = (
-                "你是一名多模态音乐助手。请根据提供的图像分析其内容，生成可供音乐制作人参考的灵感标签。"
-                "每个标签需反映出图像所传达的情绪、氛围或可能的音乐风格方向。"
-                "表达需简洁、生动、具备启发性。"
-                "请生成至少24个标签。"
-                "输出必须严格遵循以下格式：\n\n"
-                "**灵感标签**: [标签1, 标签2, 标签3, ..., 标签N]\n\n"
-                "示例：\n"
-                "**灵感标签**: [雨后青苔、石径水声节拍、心跳回声、液态节奏瀑布、湖面晚风拨弦、极光]"
+            content = (
+                "你是一名面向音乐制作人的多模态灵感助手。\n"
+                "根据提供的图像，分析其情绪、视觉特征、氛围以及可能的声音灵感。\n"
+                "请生成至少 24 个多样化的灵感标签，结合以下元素：\n"
+                "- 视觉元素（颜色、景观、光影、动态、情感）\n"
+                "- 质感印象（表面、氛围、能量感）\n"
+                "- 音乐或制作灵感（音色、乐器、节奏、结构）\n\n"
+                "不要只局限于已有风格或流派。可自由混合抽象意象、氛围和声音概念，给予制作人跳脱框架的新方向。\n"
+                "标签可以是如：'水晶晨曦闪烁'、'回声延迟海浪质感'、'极光合成垫'、'液态节奏瀑布'、'盐风打击乐'、'暮色律动漂移' 等。\n\n"
+                "严格格式要求：\n"
+                "1. 仅以以下格式输出：\n"
+                "**灵感标签**: [标签1, 标签2, 标签3, 标签4, 标签5, 标签6, 标签7, 标签8]\n"
+                "2. 不要添加任何解释、评论或额外文字。\n"
+                "3. 标签之间用英文逗号分隔，不要编号。"
             )
 
         messages = [{
             "role": "user",
             "content": [
-                {"type": "text", "text": prompt},
+                {"type": "text", "text": content},
                 {"type": "image", "image": self.image_path}
             ],
         }]
@@ -215,16 +226,34 @@ class ImageToTagsProcessor(BaseLLMProcessor):
         return messages
 
     def _postprocess(self, output: str):
-        # extract tags from both language formats
+
         pattern_en = r"\*\*inspirational tags\*\*:\s*\[(.*?)\]"
         pattern_cn = r"\*\*灵感标签\*\*:\s*\[(.*?)\]"
+
         match = re.search(pattern_en, output, re.IGNORECASE)
         if not match:
             match = re.search(pattern_cn, output, re.IGNORECASE)
+
+        if not match:
+            # Relaxed fallback (without brackets)
+            pattern_relaxed_en = r"\*\*inspirational tags\*\*:\s*(.*)"
+            pattern_relaxed_cn = r"\*\*灵感标签\*\*:\s*(.*)"
+
+            match = re.search(pattern_relaxed_en, output, re.IGNORECASE)
+            if not match:
+                match = re.search(pattern_relaxed_cn, output, re.IGNORECASE)
+
         if match:
             raw = match.group(1)
-            tags = [t.strip() for t in raw.split(',') if t.strip()]
+            raw = raw.strip().strip("[]")  # remove brackets if accidentally present
+
+            # Split by comma
+            parts = raw.split(',')
+
+            # Clean each tag: strip whitespace and surrounding * if present
+            tags = [re.sub(r'^\*|\*$', '', part.strip()) for part in parts if part.strip()]
             return tags
+
         return []
     
 class ImageToVisualEntitiesProcessor(BaseLLMProcessor):
