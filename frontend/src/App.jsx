@@ -57,6 +57,8 @@ export default function App() {
   const [promptText, setPromptText] = useState("");
   const [lyricsText, setLyricsText] = useState("");
   const [regenLoading, setRegenLoading] = useState(false);
+  const [pendingPrompt, setPendingPrompt] = useState(false);
+  const [pendingLyrics, setPendingLyrics] = useState(false);
 
   const captureAndGenerate = () => {
     const art = document.querySelector(".artboard");
@@ -137,6 +139,8 @@ export default function App() {
     setRunFolder("");
     setPromptText("");
     setLyricsText("");
+    setPendingPrompt(false);
+    setPendingLyrics(false);
     setStage("loading");
 
     setLoadingPhrase(VERBS[Math.floor(Math.random() * VERBS.length)]);
@@ -165,13 +169,21 @@ export default function App() {
         setAudioUrl(j.music.audio_url);
         setPendingMusic(!!j.music.pending);
         setRunFolder(j.music.folder || "");
+        setPendingPrompt(true);
+        setPendingLyrics(true);
         try {
-          const [pr, lyr] = await Promise.all([
-            fetch(j.music.prompt_url).then(r => r.text()),
-            fetch(j.music.lyrics_url).then(r => r.text())
+          const [prResp, lyrResp] = await Promise.all([
+            fetch(j.music.prompt_url),
+            fetch(j.music.lyrics_url)
           ]);
-          setPromptText(pr);
-          setLyricsText(lyr);
+          if (prResp.ok) {
+            setPromptText(await prResp.text());
+            setPendingPrompt(false);
+          }
+          if (lyrResp.ok) {
+            setLyricsText(await lyrResp.text());
+            setPendingLyrics(false);
+          }
         } catch {}
       }
       if (j.images) {
@@ -187,11 +199,14 @@ export default function App() {
   }
 
   const returnToEditor = () => {
-    if (editorRef.current && editorRef.current.loadSnapshot && canvasState) {
-      editorRef.current.loadSnapshot(canvasState);
-    }
     setStage("idle");
   };
+
+  useEffect(() => {
+    if (stage === "idle" && canvasState && editorRef.current?.loadSnapshot) {
+      editorRef.current.loadSnapshot(canvasState);
+    }
+  }, [stage]);
 
   async function regenerateMusic() {
     if (!runFolder) return;
@@ -259,6 +274,33 @@ export default function App() {
     }, 10000);
     return () => clearInterval(id);
   }, [pendingMusic, audioUrl]);
+
+  useEffect(() => {
+    if (!runFolder || (!pendingPrompt && !pendingLyrics)) return;
+    const check = async () => {
+      if (pendingPrompt) {
+        try {
+          const r = await fetch(`/output/${runFolder}/prompt.txt`, { cache: "no-store" });
+          if (r.ok) {
+            setPromptText(await r.text());
+            setPendingPrompt(false);
+          }
+        } catch {}
+      }
+      if (pendingLyrics) {
+        try {
+          const r = await fetch(`/output/${runFolder}/lyrics.lrc`, { cache: "no-store" });
+          if (r.ok) {
+            setLyricsText(await r.text());
+            setPendingLyrics(false);
+          }
+        } catch {}
+      }
+    };
+    check();
+    const id = setInterval(check, 5000);
+    return () => clearInterval(id);
+  }, [runFolder, pendingPrompt, pendingLyrics]);
 
   /* RENDER */
   if (stage === "idle") {
@@ -335,18 +377,20 @@ export default function App() {
           <textarea
             value={promptText}
             onChange={e => setPromptText(e.target.value)}
-            placeholder="Music prompt"
+            placeholder={pendingPrompt ? "Loading prompt..." : "Music prompt"}
+            disabled={pendingPrompt}
           />
           <textarea
             value={lyricsText}
             onChange={e => setLyricsText(e.target.value)}
-            placeholder="Lyrics"
+            placeholder={pendingLyrics ? "Loading lyrics..." : "Lyrics"}
+            disabled={pendingLyrics}
             style={{ marginTop: "0.5rem" }}
           />
           <button
             className="generate-btn"
             onClick={regenerateMusic}
-            disabled={regenLoading}
+            disabled={regenLoading || pendingMusic}
           >
             {regenLoading ? "Regenerating..." : "Regenerate Music"}
           </button>
