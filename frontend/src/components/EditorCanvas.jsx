@@ -76,6 +76,29 @@ export default function EditorCanvas({ onSubmit, language, setLanguage }) {
   const redo = () => { const h=histRef.current; if(h.idx<h.states.length-1) restore(h.states[++h.idx]); };
   useEffect(snapshot, []);                               // save blank initial
 
+  // Close any active text editing when switching tools
+  useEffect(() => {
+    if (mode !== "text") {
+      let editedIds = [];
+      setBoxes(bs => {
+        editedIds = bs.filter(b => b.editing).map(b => b.id);
+        if (editedIds.length === 0) return bs;
+        return bs.map(b => b.editing ? { ...b, editing: false } : b);
+      });
+      if (editedIds.length) {
+        editedIds.forEach(id => {
+          const el = document.getElementById(`tb-${id}`);
+          if (el) el.blur();
+        });
+        snapshot();
+      }
+    }
+
+    if (mode === "pen" || mode === "erase") {
+      setSel(null);
+    }
+  }, [mode]);
+
   /* -------------- Keyboard shortcuts -------------- */
   useEffect(()=>{
     const key = e => {
@@ -163,8 +186,7 @@ export default function EditorCanvas({ onSubmit, language, setLanguage }) {
     }
     
     if (mode==="text"){
-      if(e.target.classList.contains("textbox") || 
-        e.target.classList.contains("drag-handle") ||
+      if(e.target.classList.contains("textbox") ||
         e.target.classList.contains("resize-handle") ||
         e.target.classList.contains("size-toolbar") ||
         e.target.closest(".size-toolbar")) {
@@ -519,9 +541,14 @@ export default function EditorCanvas({ onSubmit, language, setLanguage }) {
             return (
               <div
                 key={b.id}
-                style={{ position: "absolute", left: b.x, top: b.y }}
+                style={{
+                  position: "absolute",
+                  left: b.x,
+                  top: b.y,
+                  pointerEvents: mode === "pen" || mode === "erase" ? "none" : "auto"
+                }}
                 onMouseDown={(ev) => {
-                  if (b.editing) return;
+                  if (b.editing || mode !== "move") return;
                   const pr = contRef.current.getBoundingClientRect();
                   dragRef.current = {
                     id: b.id,
@@ -648,7 +675,8 @@ export default function EditorCanvas({ onSubmit, language, setLanguage }) {
                     wordWrap: "break-word",
                     overflowWrap: "break-word",
                     cursor: b.editing ? 'text' : 'pointer',
-                    userSelect: b.editing ? 'text' : 'none'
+                    userSelect: b.editing ? 'text' : 'none',
+                    pointerEvents: mode === "pen" || mode === "erase" ? "none" : "auto"
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -677,15 +705,21 @@ export default function EditorCanvas({ onSubmit, language, setLanguage }) {
                       setSel(null);
                     } else {
                       const rect = e.target.getBoundingClientRect();
-                      setBoxes(bs => bs.map(x => x.id === b.id ? { 
-                        ...x, 
+                      setBoxes(bs => bs.map(x => x.id === b.id ? {
+                        ...x,
                         editing: false,
                         width: Math.max(50, Math.ceil(rect.width)),
                         height: Math.max(20, Math.ceil(rect.height))
                       } : x));
                     }
-                    
+
                     snapshot();
+                  }}
+                  onInput={(e) => {
+                    const el = e.target;
+                    const width = Math.min(W - b.x, Math.ceil(el.scrollWidth));
+                    const height = Math.min(H - b.y, Math.ceil(el.scrollHeight));
+                    setBoxes(bs => bs.map(x => x.id === b.id ? { ...x, width, height } : x));
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Escape') e.target.blur();

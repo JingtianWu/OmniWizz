@@ -216,9 +216,9 @@ body {
   vertical-align: top;
   
   /* Consistent layout properties */
-  border: 1px solid transparent;
+  border: none;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.95);
+  background: transparent;
   
   /* Text handling */
   white-space: pre-wrap;
@@ -236,7 +236,8 @@ body {
   /* Keep same padding/margin/sizing as base */
   /* Only change visual feedback */
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.4);
-  border-color: rgba(102, 126, 234, 0.3);
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  background: transparent;
 }
 
 /* Editing state - only change interaction, not layout */
@@ -246,8 +247,9 @@ body {
   user-select: text;
   cursor: text;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.6);
-  border-color: rgba(102, 126, 234, 0.5);
+  border: 1px solid rgba(102, 126, 234, 0.5);
   background: rgba(255, 255, 255, 0.98); /* Slightly more opaque for editing */
+  overflow: visible; /* allow auto-resize while typing */
 }
 
 /* Font size toolbar */
