@@ -37,7 +37,10 @@ def generate_music_from_image(
     raw = proc.generate()
     print("\n=== LLM RAW OUTPUT ===\n", raw, "\n=== END ===")
 
-    prompt, lyrics = proc._postprocess(raw)
+    try:
+        prompt, lyrics = proc._postprocess(raw)
+    except Exception as e:
+        raise RuntimeError(f"Postprocessing failed: {str(e)}")
     if not prompt.strip():
         raise RuntimeError("LLM did not emit a music prompt")
 

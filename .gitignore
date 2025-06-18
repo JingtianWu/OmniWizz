@@ -13,9 +13,7 @@ __pycache__/
 uploads/
 output/
 test-output/
-
-# Frontend
-node_modules/
+*.log
 
 # Virtual environments
 venv/
@@ -26,3 +24,21 @@ multisense-env/
 
 # Model weights
 backend/pretrained/
+
+# Frontend
+node_modules/
+dist/
+build/
+
+# Environment variables
+.env
+.env.*
+
+# Testing and coverage
+coverage/
+*.cover
+coverage.xml
+*.lcov
+
+# Jupyter
+.ipynb_checkpoints/
