@@ -28,7 +28,7 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
   const [textSize, setTextSize] = useState(24);
   const [drawing, setDraw] = useState(false);
 
-  const [boxes, setBoxes] = useState([]);       // text boxes
+  const [boxes, setBoxes] = useState([]);       // text boxes {id,x,y,fs,color,width,height,text,editing}
   const [selId, setSel]  = useState(null);
 
   const [hasWave, setWave] = useState(false);   // waveform present?
@@ -47,7 +47,10 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
   const makeSnapshot = () => ({
     bg   : bgSrc,
     ink  : inkRef.current.toDataURL("image/png"),
-    boxes: JSON.parse(JSON.stringify(boxes)),
+    boxes: boxes.map(b => ({
+      ...b,
+      text: document.getElementById(`tb-${b.id}`)?.innerText || b.text || ""
+    })),
     wave : hasWave ? audRef.current.toDataURL("image/png") : null
   });
 
@@ -58,13 +61,25 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
     histRef.current.idx = histRef.current.states.length - 1;
   };
   const restore = snap => {
-    setBg(snap.bg);
+    if (snap.bg) {
+      const img = new Image();
+      img.onload = () => {
+        imgRef.current = img;
+        setBg(snap.bg);
+      };
+      img.src = snap.bg;
+    } else {
+      imgRef.current = null;
+      setBg(null);
+    }
+
     /* ink */
     const i = new Image();
     i.onload = () => { inkCtx().clearRect(0,0,W,H); inkCtx().drawImage(i,0,0); };
     i.src = snap.ink;
     /* text */
-    setBoxes(snap.boxes); setSel(null);
+    setBoxes(snap.boxes.map(b => ({ ...b, editing: false })));
+    setSel(null);
     /* wave */
     setWave(!!snap.wave);
     audCtx().clearRect(0,0,W,AUDIO_H);
@@ -221,7 +236,8 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
           color,
           editing: true,
           width: 200,
-          height: textSize * 1.2 + 10
+          height: textSize * 1.2 + 10,
+          text: ""
         }
       ]);
       setSel(id);
@@ -710,7 +726,7 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
                   }}
                   onBlur={(e) => {
                     const textContent = e.target.innerText.trim();
-                    
+
                     if (!textContent) {
                       setBoxes(bs => bs.filter(x => x.id !== b.id));
                       setSel(null);
@@ -720,7 +736,8 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
                         ...x,
                         editing: false,
                         width: Math.max(50, Math.ceil(rect.width)),
-                        height: Math.max(20, Math.ceil(rect.height))
+                        height: Math.max(20, Math.ceil(rect.height)),
+                        text: textContent
                       } : x));
                     }
 
@@ -736,7 +753,8 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
                         ? {
                             ...x,
                             width: Math.min(W - x.x, Math.max(x.width || 0, newWidth)),
-                            height: Math.min(H - x.y, Math.max(x.height || 0, newHeight))
+                            height: Math.min(H - x.y, Math.max(x.height || 0, newHeight)),
+                            text: el.innerText
                           }
                         : x
                     ));
@@ -746,6 +764,7 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
                     if (b.editing) e.stopPropagation();
                   }}
                 >
+                  {b.text}
                 </div>
               </div>
             );
