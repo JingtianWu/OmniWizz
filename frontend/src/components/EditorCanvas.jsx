@@ -32,6 +32,7 @@ export default function EditorCanvas({ onSubmit, language, setLanguage }) {
   const [selId, setSel]  = useState(null);
 
   const [hasWave, setWave] = useState(false);   // waveform present?
+  const [showHint, setShowHint] = useState(true); // show start hint?
 
   /* helpers -------------------------------------------------------- */
   const bgCtx  = () => bgRef.current .getContext("2d");
@@ -132,6 +133,7 @@ export default function EditorCanvas({ onSubmit, language, setLanguage }) {
   /* -------------- Drop image on artboard -------------- */
   const onBgDrop = e => {
     e.preventDefault();
+    if (showHint) setShowHint(false);
     const f = e.dataTransfer.files[0];
     if(!f?.type.startsWith("image/")) return;
     const r = new FileReader();
@@ -145,6 +147,7 @@ export default function EditorCanvas({ onSubmit, language, setLanguage }) {
 
   /* -------------- Pen / Erase / Text -------------- */
   const startStroke = e => {
+    if (showHint) setShowHint(false);
     const {x,y} = ptr(e);
     
     if (mode==="pen" || mode==="erase") {
@@ -502,8 +505,11 @@ export default function EditorCanvas({ onSubmit, language, setLanguage }) {
             onDragOver={(e) => e.preventDefault()}
           />
           
-          {!bgSrc && (
+          {!bgSrc && showHint && (
             <div className="drop-zone" style={{ pointerEvents: 'none' }}>
+              <div className="drop-text">
+                Draw or drop an image to begin.
+              </div>
             </div>
           )}
 
@@ -703,7 +709,7 @@ export default function EditorCanvas({ onSubmit, language, setLanguage }) {
             onDragOver={(e) => e.preventDefault()}
           />
           {!hasWave && (
-            <div className="wave-drop-hint">Drop Audio File • WAV, MP3, etc.</div>
+            <div className="wave-drop-hint">Drop an audio file (WAV, MP3, etc.) to include it in the final canvas.</div>
           )}
         </div>
       </div>

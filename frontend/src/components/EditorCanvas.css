@@ -95,16 +95,19 @@ body {
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  opacity: 0.6;
+  opacity: 0.8;
+  text-align: center;
   pointer-events: none;
 }
 
 .drop-text {
-  background: rgba(102, 126, 234, 0.9);
-  color: white;
-  padding: 16px 32px;
-  border-radius: 12px;
-  font-weight: 600;
+  background: none;
+  color: rgba(0, 0, 0, 0.5);
+  padding: 0;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.4;
+  max-width: 80%;
 }
 
 /* Tool buttons */
