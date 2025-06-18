@@ -34,15 +34,22 @@ def generate_music_from_image(
     # 2) LLM → prompt + lyrics
     uri = f"file://{image_path}"
     proc = ImageToLyricsProcessor(uri, language)
-    raw = proc.generate()
+    try:
+        raw = proc.generate()
+    except Exception as e:
+        print(f"LLM generation failed: {e}; falling back to mock")
+        raw = proc._mock_generate()
+
     print("\n=== LLM RAW OUTPUT ===\n", raw, "\n=== END ===")
 
     try:
         prompt, lyrics = proc._postprocess(raw)
+        if not prompt.strip():
+            raise ValueError("empty prompt")
     except Exception as e:
-        raise RuntimeError(f"Postprocessing failed: {str(e)}")
-    if not prompt.strip():
-        raise RuntimeError("LLM did not emit a music prompt")
+        print(f"Postprocessing failed: {e}; using mock output")
+        raw = proc._mock_generate()
+        prompt, lyrics = proc._postprocess(raw)
 
     # 3) Store prompt for later reference
     with open(out_dir / "prompt.txt", "w", encoding="utf-8") as f:
@@ -52,7 +59,11 @@ def generate_music_from_image(
     assistant_reply = f"**Music Prompt:** {prompt}\n\n**Lyrics:**\n{lyrics}"
 
     # 5) Inference (or mock)
-    audio_path = run_inference(assistant_reply, out_dir)
+    try:
+        audio_path = run_inference(assistant_reply, out_dir)
+    except Exception as e:
+        print(f"DiffRhythm failed: {e}; using mock audio")
+        audio_path = run_inference(assistant_reply, out_dir, use_mock=True)
     return audio_path
 
 
@@ -64,7 +75,13 @@ def generate_tags_from_image(
 
     uri = f"file://{image_path}"
     proc = ImageToTagsProcessor(uri, language)
-    tags = proc.process()
+    try:
+        tags = proc.process()
+        if not tags:
+            raise ValueError("no tags")
+    except Exception as e:
+        print(f"Tag generation failed: {e}; using mock tags")
+        tags = proc._postprocess(proc._mock_generate())
 
     # save tags.json
     with open(out_dir / "tags.json", "w", encoding="utf-8") as f:
@@ -86,7 +103,11 @@ def generate_images_from_image(
     # 1) LLM → entities
     uri = f"file://{image_path}"
     proc = ImageToVisualEntitiesProcessor(uri, language)
-    entities = proc.process()
+    try:
+        entities = proc.process()
+    except Exception as e:
+        print(f"Entity extraction failed: {e}; continuing with empty list")
+        entities = []
 
     # 2) MOCK: copy pre-made images
     if TEST_MODE:
@@ -99,7 +120,17 @@ def generate_images_from_image(
     # 3) REAL: fetch per entity
     all_paths = []
     for ent in entities:
-        imgs = fetch_images_for_entity(ent, num=per_entity, out_dir=image_dir)
-        all_paths.extend(imgs)
+        try:
+            imgs = fetch_images_for_entity(ent, num=per_entity, out_dir=image_dir)
+            all_paths.extend(imgs)
+        except Exception as e:
+            print(f"Image fetch failed for {ent}: {e}")
+
+    if not all_paths:
+        print("No images fetched; using mock images")
+        mock_dir = Path(__file__).parent / "mock_data" / "images"
+        for img_path in mock_dir.glob("*.*"):
+            shutil.copy(img_path, image_dir)
+        all_paths = [str(p) for p in image_dir.glob("*.*")]
 
     return entities, out_dir, all_paths

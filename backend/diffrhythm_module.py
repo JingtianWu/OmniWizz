@@ -65,14 +65,14 @@ def normalize_lrc(raw_lyrics):
             
     return "\n".join(lines)
 
-def run_inference(assistant_reply: str, out_dir: Path) -> str:
+def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_MODE) -> str:
     """
     Run DiffRhythm’s infer.py in-process, writing
     - out_dir/lyrics.lrc
     - out_dir/audio.wav
     Returns path to audio.wav
     """
-    if TEST_MODE:
+    if use_mock:
         # ==== MOCK MODE ====
 
         # 1) extract prompt & lyrics normally (so you're still exercising extraction logic)
