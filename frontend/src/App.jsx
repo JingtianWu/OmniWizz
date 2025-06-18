@@ -212,6 +212,12 @@ export default function App() {
     if (!runFolder) return;
     setRegenLoading(true);
     setPendingMusic(true);
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current.load();
+    }
+    setPlaying(false);
     try {
       const data = new FormData();
       data.append("folder", runFolder);
