@@ -1,7 +1,7 @@
 import shutil
 from pathlib import Path
 
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
 
 from pipeline import (
@@ -20,6 +20,7 @@ OUTPUT_DIR = Path(__file__).parent.parent / "output"
 
 @app.post("/generate")
 async def generate(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     language: str = "en",
     modes: str = "music,tags,images",  # default all three
@@ -33,20 +34,11 @@ async def generate(
     run_dir = _make_run_dir()
     results = {}
 
-    try:
-        # 3a) Music
-        if "music" in modes.lower().split(","):
-            audio_path = generate_music_from_image(str(img_path), language, run_dir)
-            folder = run_dir.name
-            results["music"] = {
-                "folder": folder,
-                "audio_url": f"/output/{folder}/audio.wav",
-                "lyrics_url": f"/output/{folder}/lyrics.lrc",
-                "prompt_url": f"/output/{folder}/prompt.txt",
-            }
+    modes_set = set(modes.lower().split(","))
 
-        # 3b) Tags
-        if "tags" in modes.lower().split(","):
+    try:
+        # 3a) Tags first
+        if "tags" in modes_set:
             tags, _ = generate_tags_from_image(str(img_path), language, run_dir)
             folder = run_dir.name
             results["tags"] = {
@@ -55,13 +47,12 @@ async def generate(
                 "tags_url": f"/output/{folder}/tags.json",
             }
 
-        # 3c) Images
-        if "images" in modes.lower().split(","):
+        # 3b) Images next
+        if "images" in modes_set:
             entities, _, image_paths = generate_images_from_image(
                 str(img_path), language, run_dir=run_dir
             )
             folder = run_dir.name
-            # convert local image paths to frontend-accessible URLs
             image_urls = [
                 f"/output/{folder}/images/{Path(p).name}" for p in image_paths
             ]
@@ -69,6 +60,20 @@ async def generate(
                 "folder": folder,
                 "entities": [str(e) for e in entities],
                 "images": image_urls,
+            }
+
+        # 3c) Music last (async)
+        if "music" in modes_set:
+            folder = run_dir.name
+            background_tasks.add_task(
+                generate_music_from_image, str(img_path), language, run_dir
+            )
+            results["music"] = {
+                "folder": folder,
+                "audio_url": f"/output/{folder}/audio.wav",
+                "lyrics_url": f"/output/{folder}/lyrics.lrc",
+                "prompt_url": f"/output/{folder}/prompt.txt",
+                "pending": True,
             }
 
     except Exception as e:

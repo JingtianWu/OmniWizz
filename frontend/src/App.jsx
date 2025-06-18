@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useRef, useMemo, useEffect } from "react";
 import EditorCanvas from "./components/EditorCanvas";
 import VinylIcon from "./components/VinylIcon";
 import "./index.css";
@@ -39,6 +39,7 @@ export default function App() {
   /* Data */
   const [tags, setTags]       = useState([]);
   const [audioUrl, setAudioUrl]   = useState("");
+  const [pendingMusic, setPendingMusic] = useState(false);
   const [images, setImages]   = useState([]);
 
   /* Audio */
@@ -116,6 +117,7 @@ export default function App() {
 
     setTags([]);
     setAudioUrl("");
+    setPendingMusic(false);
     setImages([]);
     setPlaying(false);
     setStage("loading");
@@ -144,6 +146,7 @@ export default function App() {
       }
       if (j.music) {
         setAudioUrl(j.music.audio_url);
+        setPendingMusic(!!j.music.pending);
       }
       if (j.images) {
         const arr = j.images.images ?? j.images;
@@ -187,6 +190,21 @@ export default function App() {
       return { x, y, rotation };
     });
   }, [visibleImages]);
+
+  useEffect(() => {
+    if (!pendingMusic || !audioUrl) return;
+    const id = setInterval(async () => {
+      try {
+        const resp = await fetch(audioUrl, { cache: "no-store" });
+        if (resp.ok) {
+          setPendingMusic(false);
+          setAudioUrl(audioUrl + `?t=${Date.now()}`);
+          clearInterval(id);
+        }
+      } catch {}
+    }, 10000);
+    return () => clearInterval(id);
+  }, [pendingMusic, audioUrl]);
 
   /* RENDER */
   if (stage === "idle") {
@@ -259,6 +277,7 @@ export default function App() {
             <>
               <VinylIcon
                 playing={playing}
+                loading={pendingMusic}
                 onClick={() => {
                   if (!audioRef.current) return;
                   playing ? audioRef.current.pause() : audioRef.current.play();
