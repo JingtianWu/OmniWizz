@@ -44,14 +44,16 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
   };
 
   /* -------------- History snapshots -------------- */
+  const makeSnapshot = () => ({
+    bg   : bgSrc,
+    ink  : inkRef.current.toDataURL("image/png"),
+    boxes: JSON.parse(JSON.stringify(boxes)),
+    wave : hasWave ? audRef.current.toDataURL("image/png") : null
+  });
+
   const snapshot = () => {
     histRef.current.states = histRef.current.states.slice(0, histRef.current.idx + 1);
-    histRef.current.states.push({
-      bg   : bgSrc,
-      ink  : inkRef.current.toDataURL("image/png"),
-      boxes: JSON.parse(JSON.stringify(boxes)),
-      wave : hasWave ? audRef.current.toDataURL("image/png") : null
-    });
+    histRef.current.states.push(makeSnapshot());
     if (histRef.current.states.length > MAX_HISTORY) histRef.current.states.shift();
     histRef.current.idx = histRef.current.states.length - 1;
   };
@@ -77,8 +79,12 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
   useEffect(snapshot, []);                               // save blank initial
 
   useImperativeHandle(ref, () => ({
-    getSnapshot: () => histRef.current.states[histRef.current.idx],
-    loadSnapshot: snap => restore(snap)
+    getSnapshot: () => makeSnapshot(),
+    loadSnapshot: snap => {
+      restore(snap);
+      histRef.current.states = [snap];
+      histRef.current.idx = 0;
+    }
   }));
 
   // Close any active text editing when switching tools
