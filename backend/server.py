@@ -95,6 +95,15 @@ async def regenerate(
         raise HTTPException(404, "Folder not found")
 
     (out_dir / "prompt.txt").write_text(prompt, encoding="utf-8")
+
+    # Remove old audio & lyrics so frontend polls until new files exist
+    audio_fp = out_dir / "audio.wav"
+    lrc_fp = out_dir / "lyrics.lrc"
+    if audio_fp.exists():
+        audio_fp.unlink()
+    if lrc_fp.exists():
+        lrc_fp.unlink()
+    
     assistant_reply = f"**Music Prompt:** {prompt}\n\n**Lyrics:**\n{lyrics}"
     background_tasks.add_task(run_inference, assistant_reply, out_dir)
     return {
