@@ -1,7 +1,7 @@
 import shutil
 from pathlib import Path
 
-from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
 
 from pipeline import (
@@ -10,6 +10,7 @@ from pipeline import (
     generate_tags_from_image,
     generate_images_from_image,
 )
+from diffrhythm_module import run_inference
 
 app = FastAPI()
 
@@ -80,6 +81,26 @@ async def generate(
         raise HTTPException(status_code=500, detail=str(e))
 
     return results
+
+
+@app.post("/regenerate")
+async def regenerate(
+    background_tasks: BackgroundTasks,
+    folder: str = Form(...),
+    prompt: str = Form(...),
+    lyrics: str = Form(...),
+):
+    out_dir = OUTPUT_DIR / folder
+    if not out_dir.exists():
+        raise HTTPException(404, "Folder not found")
+
+    (out_dir / "prompt.txt").write_text(prompt, encoding="utf-8")
+    assistant_reply = f"**Music Prompt:** {prompt}\n\n**Lyrics:**\n{lyrics}"
+    background_tasks.add_task(run_inference, assistant_reply, out_dir)
+    return {
+        "audio_url": f"/output/{folder}/audio.wav",
+        "pending": True,
+    }
 
 
 @app.get("/output/{folder}/{subpath:path}")

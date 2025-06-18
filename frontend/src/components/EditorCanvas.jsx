@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, forwardRef, useImperativeHandle } from "react";
 import "./EditorCanvas.css";
 import { Pencil, Eraser, Type, Undo2, Redo2, Trash2, Palette, Move } from "lucide-react";
 
@@ -9,7 +9,7 @@ const W = 896, H = 504, AUDIO_H = 120, MAX_HISTORY = 50;
 const MIN_FONT_SIZE = 1;
 const MAX_FONT_SIZE = 200;
 
-export default function EditorCanvas({ onSubmit, language, setLanguage }) {
+const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setLanguage }, ref) {
   /* refs ----------------------------------------------------------- */
   const bgRef = useRef(null);   // background layer
   const inkRef = useRef(null);  // pen / eraser
@@ -75,6 +75,11 @@ export default function EditorCanvas({ onSubmit, language, setLanguage }) {
   const undo = () => { const h=histRef.current; if(h.idx>0) restore(h.states[--h.idx]); };
   const redo = () => { const h=histRef.current; if(h.idx<h.states.length-1) restore(h.states[++h.idx]); };
   useEffect(snapshot, []);                               // save blank initial
+
+  useImperativeHandle(ref, () => ({
+    getSnapshot: () => histRef.current.states[histRef.current.idx],
+    loadSnapshot: snap => restore(snap)
+  }));
 
   // Close any active text editing when switching tools
   useEffect(() => {
@@ -758,4 +763,6 @@ export default function EditorCanvas({ onSubmit, language, setLanguage }) {
       </div>
     </div>
   );
-}
+});
+
+export default EditorCanvas;

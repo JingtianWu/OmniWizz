@@ -24,6 +24,7 @@ function getPolarPosition(index, total, baseRadius, randomRange = 0) {
 }
 
 export default function App() {
+  const editorRef = useRef(null);
   /* Toggles */
   const [doTags, setDoTags]     = useState(true);
   const [doMusic, setDoMusic]   = useState(true);
@@ -48,6 +49,14 @@ export default function App() {
 
   /* Pagination */
   const [groupIdx, setGroupIdx] = useState(0);
+
+  /* Saved canvas + prompt/lyrics */
+  const [canvasUrl, setCanvasUrl] = useState("");
+  const [canvasState, setCanvasState] = useState(null);
+  const [runFolder, setRunFolder] = useState("");
+  const [promptText, setPromptText] = useState("");
+  const [lyricsText, setLyricsText] = useState("");
+  const [regenLoading, setRegenLoading] = useState(false);
 
   const captureAndGenerate = () => {
     const art = document.querySelector(".artboard");
@@ -88,6 +97,11 @@ export default function App() {
       ctx.drawImage(audioCanvas, 0, H);
     }
 
+    setCanvasUrl(off.toDataURL("image/png"));
+    if (editorRef.current && editorRef.current.getSnapshot) {
+      setCanvasState(editorRef.current.getSnapshot());
+    }
+
     off.toBlob(blob => {
       const file = new File([blob], "canvas.jpg", { type: "image/jpeg" });
       handleFile(file);
@@ -120,6 +134,9 @@ export default function App() {
     setPendingMusic(false);
     setImages([]);
     setPlaying(false);
+    setRunFolder("");
+    setPromptText("");
+    setLyricsText("");
     setStage("loading");
 
     setLoadingPhrase(VERBS[Math.floor(Math.random() * VERBS.length)]);
@@ -147,6 +164,15 @@ export default function App() {
       if (j.music) {
         setAudioUrl(j.music.audio_url);
         setPendingMusic(!!j.music.pending);
+        setRunFolder(j.music.folder || "");
+        try {
+          const [pr, lyr] = await Promise.all([
+            fetch(j.music.prompt_url).then(r => r.text()),
+            fetch(j.music.lyrics_url).then(r => r.text())
+          ]);
+          setPromptText(pr);
+          setLyricsText(lyr);
+        } catch {}
       }
       if (j.images) {
         const arr = j.images.images ?? j.images;
@@ -157,6 +183,34 @@ export default function App() {
     } finally {
       clearInterval(intervalId);
       setStage("done");
+    }
+  }
+
+  const returnToEditor = () => {
+    if (editorRef.current && editorRef.current.loadSnapshot && canvasState) {
+      editorRef.current.loadSnapshot(canvasState);
+    }
+    setStage("idle");
+  };
+
+  async function regenerateMusic() {
+    if (!runFolder) return;
+    setRegenLoading(true);
+    setPendingMusic(true);
+    try {
+      const data = new FormData();
+      data.append("folder", runFolder);
+      data.append("prompt", promptText);
+      data.append("lyrics", lyricsText);
+      const res = await fetch("/regenerate", { method: "POST", body: data });
+      const j = await res.json();
+      if (j.audio_url) {
+        setAudioUrl(j.audio_url + `?t=${Date.now()}`);
+      }
+    } catch (err) {
+      console.error("Regenerate failed:", err);
+    } finally {
+      setRegenLoading(false);
     }
   }
 
@@ -211,7 +265,8 @@ export default function App() {
     return (
       <div className="app-center-container">
         <div style={{ display: "flex", gap: "2rem", alignItems: "flex-start" }}>
-          <EditorCanvas 
+          <EditorCanvas
+            ref={editorRef}
             onSubmit={handleFile}
             language={language}
             setLanguage={setLanguage}
@@ -269,9 +324,37 @@ export default function App() {
   }
 
   return (
-    <div className="app-right-container">
-      <div className="board-frame">
-        <div className="center-cluster">
+    <div className="done-container">
+      <div className="done-left">
+        {canvasUrl && (
+          <div className="canvas-frame" onClick={returnToEditor}>
+            <img src={canvasUrl} alt="final canvas" style={{ width: "100%" }} />
+          </div>
+        )}
+        <div className="prompt-box">
+          <textarea
+            value={promptText}
+            onChange={e => setPromptText(e.target.value)}
+            placeholder="Music prompt"
+          />
+          <textarea
+            value={lyricsText}
+            onChange={e => setLyricsText(e.target.value)}
+            placeholder="Lyrics"
+            style={{ marginTop: "0.5rem" }}
+          />
+          <button
+            className="generate-btn"
+            onClick={regenerateMusic}
+            disabled={regenLoading}
+          >
+            {regenLoading ? "Regenerating..." : "Regenerate Music"}
+          </button>
+        </div>
+      </div>
+      <div className="app-right-container">
+        <div className="board-frame">
+          <div className="center-cluster">
 
           {doMusic && (
             <>
@@ -384,6 +467,7 @@ export default function App() {
         </div>
       </div>
     </div>
+  </div>
   );
 }
 
