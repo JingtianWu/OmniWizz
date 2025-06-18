@@ -6,6 +6,14 @@
 
 > **Current Stage:** Initial **image → music** prototype complete.
 
+
+## Features
+- **Image → Music** via DiffRhythm with timestamped lyrics
+- **Image → Tags** for creativity prompts
+- **Image → Related Images** via SerpAPI (`SERPAPI_API_KEY` required)
+- REST endpoint `/generate` wraps all pipelines
+- Toggle `TEST_MODE` in `backend/config.py` for offline demos
+
 ---
 
 ## Repository Structure
@@ -31,22 +39,7 @@ multisense/
 └── README.md                
 ```
 
----
-
-## Quickstart (Image → Music Prototype)
-
-1. **Clone the repo**
-
-   ```bash
-   git clone https://github.com/JingtianWu/Multisense.git
-   cd Multisense
-   ```
-
-2. **Backend setup**
-
-   ```bash
-   # Python environment
-   python3 -m venv multisense-env
+@@ -50,35 +58,42 @@ multisense/
    source multisense-env/bin/activate
 
    # Install deps
@@ -71,6 +64,13 @@ multisense/
    ```
 
    Open **[http://localhost:3000](http://localhost:3000)**, then drag & drop an image to generate music.
+
+## Tests
+Run unit pipelines in safe offline mode:
+```bash
+python backend/test_pipelines.py
+```
+
 
 ---
 
