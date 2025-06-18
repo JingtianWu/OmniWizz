@@ -99,7 +99,8 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
       restore(snap);
       histRef.current.states = [snap];
       histRef.current.idx = 0;
-    }
+    },
+    dismissHint: () => setShowHint(false)
   }));
 
   // Close any active text editing when switching tools

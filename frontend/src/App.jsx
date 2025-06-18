@@ -200,6 +200,9 @@ export default function App() {
 
   const returnToEditor = () => {
     setStage("idle");
+    setTimeout(() => {
+      editorRef.current?.dismissHint?.();
+    }, 0);
   };
 
   useEffect(() => {
