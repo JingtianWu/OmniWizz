@@ -617,7 +617,7 @@ export default function EditorCanvas({ onSubmit, language, setLanguage }) {
                 )}
 
                 {/* Resize handle - bottom right for reshaping textbox dimensions */}
-                {sel && !b.editing && (
+                {sel && (
                   <div
                     className="resize-handle"
                     onMouseDown={(ev) => {
@@ -717,9 +717,18 @@ export default function EditorCanvas({ onSubmit, language, setLanguage }) {
                   }}
                   onInput={(e) => {
                     const el = e.target;
-                    const width = Math.min(W - b.x, Math.ceil(el.scrollWidth));
-                    const height = Math.min(H - b.y, Math.ceil(el.scrollHeight));
-                    setBoxes(bs => bs.map(x => x.id === b.id ? { ...x, width, height } : x));
+                    const newWidth = Math.ceil(el.scrollWidth);
+                    const newHeight = Math.ceil(el.scrollHeight);
+
+                    setBoxes(bs => bs.map(x =>
+                      x.id === b.id
+                        ? {
+                            ...x,
+                            width: Math.min(W - x.x, Math.max(x.width || 0, newWidth)),
+                            height: Math.min(H - x.y, Math.max(x.height || 0, newHeight))
+                          }
+                        : x
+                    ));
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Escape') e.target.blur();
