@@ -34,8 +34,8 @@ html { scroll-behavior: smooth; }
   width: 100%;
   display: flex;
   align-items: center;     /* vertical centring */
-  /* justify-content: flex-end; */
-  justify-content: center;
+  justify-content: flex-end;
+  /* justify-content: center; */
   padding-right: 1rem;
 }
 
