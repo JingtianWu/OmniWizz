@@ -8,17 +8,48 @@ import shutil
 from pathlib import Path
 from config import TEST_MODE
 
-def extract_prompt_and_lyrics(output, lang='en'):
-    if lang == 'en':
-        p_pat = r"\*\*Music(?:al)? Prompt:\*\*\s*(.*?)(?:\n{2,}|\*\*Lyrics:\*\*)"
-        l_pat = r"\*\*Lyrics:\*\*\s*([\s\S]+)"
+def extract_prompt_and_lyrics(output, lang="en"):
+    """Return (prompt, lyrics) parsed from raw model output."""
+    if lang == "en":
+        p_pats = [
+            r"\*\*Music(?:al)? Prompt\*\*[:：]?\s*(.*?)(?:\n{2,}|\*\*Lyrics)",
+            r"Music(?:al)? Prompt[:：]?\s*(.*?)(?:\n{2,}|Lyrics)",
+        ]
+        l_pats = [
+            r"\*\*Lyrics\*\*[:：]?\s*([\s\S]+)",
+            r"Lyrics[:：]?\s*([\s\S]+)",
+        ]
     else:
-        p_pat = r"\*\*音乐风格：\*\*\s*(.*?)(?:\n{2,}|\*\*歌词：\*\*)"
-        l_pat = r"\*\*歌词：\*\*\s*([\s\S]+)"
-    prompt = re.search(p_pat, output, re.IGNORECASE)
-    lyrics = re.search(l_pat, output, re.IGNORECASE)
-    return (prompt.group(1).strip() if prompt else "",
-            lyrics.group(1).strip() if lyrics else "")
+        p_pats = [
+            r"\*\*音乐风格\*\*[:：]?\s*(.*?)(?:\n{2,}|\*\*歌词)",
+            r"音乐风格[:：]?\s*(.*?)(?:\n{2,}|歌词)",
+        ]
+        l_pats = [
+            r"\*\*歌词\*\*[:：]?\s*([\s\S]+)",
+            r"歌词[:：]?\s*([\s\S]+)",
+        ]
+
+    prompt = ""
+    lyrics = ""
+    for pat in p_pats:
+        m = re.search(pat, output, re.IGNORECASE | re.DOTALL)
+        if m:
+            prompt = m.group(1).strip()
+            break
+
+    for pat in l_pats:
+        m = re.search(pat, output, re.IGNORECASE | re.DOTALL)
+        if m:
+            lyrics = m.group(1).strip()
+            break
+
+    if not prompt:
+        # Fallback to the first line if pattern failed
+        lines = output.strip().splitlines()
+        if lines:
+            prompt = lines[0].split(":", 1)[-1].strip().lstrip("*- ")
+
+    return prompt, lyrics
 
 def normalize_lrc(raw_lyrics):
     timestamp_pattern = re.compile(r"(\[\d{2}:\d{2}\.\d{2}\])")
