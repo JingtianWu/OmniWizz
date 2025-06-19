@@ -350,6 +350,9 @@ export default function App() {
   const R        = 90;
   const cx       = 100 + R * Math.cos(theta);
   const cy       = 100 + R * Math.sin(theta);
+  const promptDisabled  = !doMusic || pendingPrompt;
+  const lyricsDisabled  = !doMusic || pendingLyrics;
+  const regenDisabled   = !doMusic || regenLoading || pendingMusic;
 
   /* RENDER */
   if (stage === "idle") {
@@ -424,18 +427,23 @@ export default function App() {
           </div>
         )}
         <div className="prompt-box">
-          {doMusic ? (
-            <>
           <label className="prompt-field">
             <div className="prompt-label">Prompt</div>
             <textarea
               value={promptText}
               onChange={e => setPromptText(e.target.value)}
-              placeholder={pendingPrompt ? "Loading prompt..." : "Enter music generation prompt"}
-              disabled={pendingPrompt}
+              placeholder={
+                !doMusic
+                  ? "Music option not selected..."
+                  : pendingPrompt
+                    ? "Loading prompt..."
+                    : "Enter music generation prompt"
+              }
+              disabled={promptDisabled}
               className="prompt-input"
             />
           </label>
+
           <div className="lyrics-field">
             <div className="prompt-label">Lyrics</div>
             <div className="lyrics-editor">
@@ -443,7 +451,7 @@ export default function App() {
                 const match = line.match(/^\[(\d{2}):(\d{2})\.(\d{2})\](.*)$/);
                 const [minutes, seconds, ms] = match ? [match[1], match[2], match[3]] : ['00', '00', '00'];
                 const content = match ? match[4] : line;
-                
+
                 return (
                   <div key={index} className="lyrics-row">
                     <div className="timestamp-inputs">
@@ -458,7 +466,7 @@ export default function App() {
                           setLyricsText(lines.join('\n'));
                         }}
                         className="time-input"
-                        disabled={pendingLyrics}
+                        disabled={lyricsDisabled}
                         maxLength="2"
                       />
                       <span className="timestamp-separator">:</span>
@@ -472,7 +480,7 @@ export default function App() {
                           setLyricsText(lines.join('\n'));
                         }}
                         className="time-input"
-                        disabled={pendingLyrics}
+                        disabled={lyricsDisabled}
                         maxLength="2"
                       />
                       <span className="timestamp-separator">.</span>
@@ -486,7 +494,7 @@ export default function App() {
                           setLyricsText(lines.join('\n'));
                         }}
                         className="time-input"
-                        disabled={pendingLyrics}
+                        disabled={lyricsDisabled}
                         maxLength="2"
                       />
                       <span className="timestamp-bracket">]</span>
@@ -501,7 +509,7 @@ export default function App() {
                       }}
                       className="lyrics-text-input"
                       placeholder="Enter lyrics..."
-                      disabled={pendingLyrics}
+                      disabled={lyricsDisabled}
                     />
                     <button
                       onClick={() => {
@@ -509,45 +517,45 @@ export default function App() {
                         setLyricsText(lines.join('\n'));
                       }}
                       className="remove-line-btn"
-                      disabled={pendingLyrics}
+                      disabled={lyricsDisabled}
                     >
                       ×
                     </button>
                   </div>
                 );
               })}
+
               <button
                 onClick={() => {
                   const lastLine = lyricsText.split('\n').filter(line => line.trim()).pop();
                   const lastMatch = lastLine?.match(/^\[(\d{2}):(\d{2})\.(\d{2})\]/);
                   let newTime = '[00:00.00]';
                   if (lastMatch) {
-                    const totalMs = parseInt(lastMatch[1]) * 60000 + parseInt(lastMatch[2]) * 1000 + parseInt(lastMatch[3]) * 10 + 4000;
+                    const totalMs = parseInt(lastMatch[1]) * 60000 +
+                                    parseInt(lastMatch[2]) * 1000 +
+                                    parseInt(lastMatch[3]) * 10 + 4000;
                     const newMin = Math.floor(totalMs / 60000).toString().padStart(2, '0');
                     const newSec = Math.floor((totalMs % 60000) / 1000).toString().padStart(2, '0');
-                    const newMs = Math.floor((totalMs % 1000) / 10).toString().padStart(2, '0');
+                    const newMs  = Math.floor((totalMs % 1000) / 10).toString().padStart(2, '0');
                     newTime = `[${newMin}:${newSec}.${newMs}]`;
                   }
                   setLyricsText(lyricsText + (lyricsText ? '\n' : '') + newTime);
                 }}
                 className="add-line-btn"
-                disabled={pendingLyrics}
+                disabled={lyricsDisabled}
               >
                 + Add Line
               </button>
             </div>
           </div>
+
           <button
             className="regen-btn"
             onClick={regenerateMusic}
-            disabled={regenLoading || pendingMusic}
+            disabled={regenDisabled}
           >
             {regenLoading ? "Regenerating..." : "Regenerate Music"}
           </button>
-            </>
-          ) : (
-            <p style={{textAlign:'center', opacity:0.8}}>Music option not selected.</p>
-          )}
         </div>
       </div>
       <div className="app-right-container">
