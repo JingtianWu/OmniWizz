@@ -471,7 +471,7 @@ html { scroll-behavior: smooth; }
   gap: 1rem;
   position: relative;
   overflow: visible;
-  height: fit-content;
+  width: 480px;
   max-height: 85vh;
 }
 
