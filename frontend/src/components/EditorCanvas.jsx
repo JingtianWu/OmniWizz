@@ -8,9 +8,7 @@ import {
   Redo2,
   Trash2,
   Palette,
-  Move,
-  Image as ImageIcon,
-  Music
+  Move
 } from "lucide-react";
 
 /* canvas sizes */
@@ -44,6 +42,7 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
 
   const [hasWave, setWave] = useState(false);   // waveform present?
   const [showHint, setShowHint] = useState(true); // show start hint?
+  const [showTrashMenu, setShowTrashMenu] = useState(false);
 
   /* helpers -------------------------------------------------------- */
   const bgCtx  = () => bgRef.current .getContext("2d");
@@ -66,10 +65,15 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
     histRef.current.idx = histRef.current.states.length - 1;
   };
   const restore = dataUrl => {
+    const ctx = inkCtx();
+    ctx.save();                                // isolate current composite mode
+    ctx.globalCompositeOperation = "source-over";
+    ctx.clearRect(0, 0, W, H);
+
     const img = new Image();
     img.onload = () => {
-      inkCtx().clearRect(0, 0, W, H);
-      inkCtx().drawImage(img, 0, 0);
+      ctx.drawImage(img, 0, 0);
+      ctx.restore();                           // return to the tool’s active mode
     };
     img.src = dataUrl;
   };
@@ -183,8 +187,9 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
     if (showHint) setShowHint(false);
     const {x,y} = ptr(e);
     
-    if (mode==="pen" || mode==="erase") {
-      const cx = inkCtx(); 
+    if (mode === "pen" || mode === "erase") {
+      const cx = inkCtx();
+      cx.save();                                 // snapshot context state
       cx.lineCap = cx.lineJoin = "round";
       cx.lineWidth = mode === "pen" ? penSize : eraserSize;
       cx.globalCompositeOperation = mode === "pen" ? "source-over" : "destination-out";
@@ -251,6 +256,7 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
   const endStroke = () => {
     if (drawingRef.current) {
       drawingRef.current = false;
+      inkCtx().restore();
       snapshot();
     }
   };
@@ -502,17 +508,53 @@ const handleFontSizeChange = (boxId, newSize) => {
 
           <div className="divider" />
 
-          <button className="tool-btn" onClick={clearAll} title="Clear All">
-            <Trash2 size={20} />
-          </button>
+          <div style={{ position: "relative" }}>
+            <button
+              className="tool-btn"
+              onClick={() => setShowTrashMenu(prev => !prev)}
+              title="Clear…"
+            >
+              <Trash2 size={20} />
+            </button>
 
-          <button className="tool-btn" onClick={clearImage} title="Clear Image">
-            <ImageIcon size={20} />
-          </button>
-
-          <button className="tool-btn" onClick={clearAudio} title="Clear Audio">
-            <Music size={20} />
-          </button>
+            {showTrashMenu && (
+              <div
+                className="trash-menu"
+                tabIndex={-1}
+                onBlur={() => setShowTrashMenu(false)}
+                style={{
+                  position: "absolute",
+                  top: "110%",
+                  left: 0,
+                  background: "rgba(30,30,40,0.95)",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  borderRadius: "6px",
+                  padding: "6px 0",
+                  minWidth: "140px",
+                  zIndex: 50
+                }}
+              >
+                <button
+                  className="trash-item"
+                  onClick={() => { clearAll(); setShowTrashMenu(false); }}
+                >
+                  Clear&nbsp;All
+                </button>
+                <button
+                  className="trash-item"
+                  onClick={() => { clearImage(); setShowTrashMenu(false); }}
+                >
+                  Clear&nbsp;Image
+                </button>
+                <button
+                  className="trash-item"
+                  onClick={() => { clearAudio(); setShowTrashMenu(false); }}
+                >
+                  Clear&nbsp;Audio
+                </button>
+              </div>
+            )}
+          </div>
 
           <div className="color-picker-wrapper" title="Choose Color">
             <input type="color" className="color-picker" value={color} onChange={(e) => setColor(e.target.value)} />
