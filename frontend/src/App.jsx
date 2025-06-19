@@ -242,6 +242,10 @@ export default function App() {
   }, [stage]);
 
   async function regenerateMusic() {
+    if (!doMusic) {
+      alert('Music option not selected.');
+      return;
+    }
     if (!runFolder) return;
     setRegenLoading(true);
     setPendingMusic(true);
@@ -420,6 +424,8 @@ export default function App() {
           </div>
         )}
         <div className="prompt-box">
+          {doMusic ? (
+            <>
           <label className="prompt-field">
             <div className="prompt-label">Prompt</div>
             <textarea
@@ -538,6 +544,10 @@ export default function App() {
           >
             {regenLoading ? "Regenerating..." : "Regenerate Music"}
           </button>
+            </>
+          ) : (
+            <p style={{textAlign:'center', opacity:0.8}}>Music option not selected.</p>
+          )}
         </div>
       </div>
       <div className="app-right-container">
