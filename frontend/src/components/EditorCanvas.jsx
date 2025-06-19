@@ -1,6 +1,17 @@
 import React, { useRef, useState, useEffect, forwardRef, useImperativeHandle } from "react";
 import "./EditorCanvas.css";
-import { Pencil, Eraser, Type, Undo2, Redo2, Trash2, Palette, Move } from "lucide-react";
+import {
+  Pencil,
+  Eraser,
+  Type,
+  Undo2,
+  Redo2,
+  Trash2,
+  Palette,
+  Move,
+  Image as ImageIcon,
+  Music
+} from "lucide-react";
 
 /* canvas sizes */
 const W = 896, H = 504, AUDIO_H = 120, MAX_HISTORY = 50;
@@ -26,7 +37,7 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
   const [penSize, setPenSize] = useState(4);
   const [eraserSize, setEraserSize] = useState(10);
   const [textSize, setTextSize] = useState(24);
-  const [drawing, setDraw] = useState(false);
+  const drawingRef = useRef(false); // track active stroke without state lag
 
   const [boxes, setBoxes] = useState([]);       // text boxes {id,x,y,fs,color,width,height,text,editing}
   const [selId, setSel]  = useState(null);
@@ -44,15 +55,9 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
   };
 
   /* -------------- History snapshots -------------- */
-  const makeSnapshot = () => ({
-    bg   : bgSrc,
-    ink  : inkRef.current.toDataURL("image/png"),
-    boxes: boxes.map(b => ({
-      ...b,
-      text: document.getElementById(`tb-${b.id}`)?.innerText || b.text || ""
-    })),
-    wave : hasWave ? audRef.current.toDataURL("image/png") : null
-  });
+  const makeSnapshot = () => (
+    inkRef.current.toDataURL("image/png")
+  );
 
   const snapshot = () => {
     histRef.current.states = histRef.current.states.slice(0, histRef.current.idx + 1);
@@ -60,34 +65,13 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
     if (histRef.current.states.length > MAX_HISTORY) histRef.current.states.shift();
     histRef.current.idx = histRef.current.states.length - 1;
   };
-  const restore = snap => {
-    if (snap.bg) {
-      const img = new Image();
-      img.onload = () => {
-        imgRef.current = img;
-        setBg(snap.bg);
-      };
-      img.src = snap.bg;
-    } else {
-      imgRef.current = null;
-      setBg(null);
-    }
-
-    /* ink */
-    const i = new Image();
-    i.onload = () => { inkCtx().clearRect(0,0,W,H); inkCtx().drawImage(i,0,0); };
-    i.src = snap.ink;
-    /* text */
-    setBoxes(snap.boxes.map(b => ({ ...b, editing: false })));
-    setSel(null);
-    /* wave */
-    setWave(!!snap.wave);
-    audCtx().clearRect(0,0,W,AUDIO_H);
-    if (snap.wave) {
-      const w = new Image();
-      w.onload = () => audCtx().drawImage(w,0,0);
-      w.src = snap.wave;
-    }
+  const restore = dataUrl => {
+    const img = new Image();
+    img.onload = () => {
+      inkCtx().clearRect(0, 0, W, H);
+      inkCtx().drawImage(img, 0, 0);
+    };
+    img.src = dataUrl;
   };
   const undo = () => { const h=histRef.current; if(h.idx>0) restore(h.states[--h.idx]); };
   const redo = () => { const h=histRef.current; if(h.idx<h.states.length-1) restore(h.states[++h.idx]); };
@@ -118,7 +102,6 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
           const el = document.getElementById(`tb-${id}`);
           if (el) el.blur();
         });
-        snapshot();
       }
     }
 
@@ -140,7 +123,6 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
         }
         setBoxes(bs => bs.filter(b => b.id !== selId));
         setSel(null);
-        snapshot();
       }
     };
     document.addEventListener("keydown", key);
@@ -174,7 +156,7 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
 
       setBoxes(bs => bs.map(b => b.id === id ? { ...b, x: nx, y: ny } : b));
     };
-    const up = () => { if(dragRef.current){ dragRef.current=null; snapshot(); } };
+    const up = () => { if(dragRef.current){ dragRef.current=null; } };
     document.addEventListener("mousemove", move);
     document.addEventListener("mouseup",   up);
     return ()=>{ document.removeEventListener("mousemove", move);
@@ -190,7 +172,7 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
     const r = new FileReader();
     r.onload = ev=>{
       const im=new Image();
-      im.onload = ()=>{ imgRef.current=im; setBg(ev.target.result); snapshot(); };
+      im.onload = ()=>{ imgRef.current=im; setBg(ev.target.result); };
       im.src = ev.target.result;
     };
     r.readAsDataURL(f);
@@ -207,10 +189,10 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
       cx.lineWidth = mode === "pen" ? penSize : eraserSize;
       cx.globalCompositeOperation = mode === "pen" ? "source-over" : "destination-out";
       if (mode === "pen") cx.strokeStyle = color;
-      cx.beginPath(); 
-      cx.moveTo(x,y); 
-      setDraw(true); 
-      return; 
+      cx.beginPath();
+      cx.moveTo(x, y);
+      drawingRef.current = true;
+      return;
     }
     
     if (mode==="text"){
@@ -252,15 +234,26 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
       
       // Switch back to move mode after creating textbox
       setMode("move");
-      snapshot();
       return;
     }
     
     // If in move mode, handle selection/deselection
     if (mode === "move") setSel(null);
   };
-  const drawMove = e => { if(drawing) { const {x,y}=ptr(e); inkCtx().lineTo(x,y); inkCtx().stroke(); } };
-  const endStroke = () => { if(drawing){ setDraw(false); snapshot(); } };
+  const drawMove = e => {
+    if (drawingRef.current) {
+      const { x, y } = ptr(e);
+      inkCtx().lineTo(x, y);
+      inkCtx().stroke();
+    }
+  };
+
+  const endStroke = () => {
+    if (drawingRef.current) {
+      drawingRef.current = false;
+      snapshot();
+    }
+  };
 
   /* -------------- Drop audio on waveform strip -------------- */
   const onAudDrop = e => {
@@ -273,7 +266,6 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
       AC.decodeAudioData(ev.target.result).then(buf=>{
         renderWave(buf);
         setWave(true);
-        snapshot();
       });
     };
     rd.readAsArrayBuffer(f);
@@ -440,14 +432,24 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
   const clearAll = () => {
     inkCtx().clearRect(0,0,W,H); audCtx().clearRect(0,0,W,AUDIO_H);
     setWave(false); paintBg(null); setBg(null); imgRef.current=null;
-    setBoxes([]); setSel(null); snapshot();
+    setBoxes([]); setSel(null);
+  };
+
+  const clearImage = () => {
+    paintBg(null);
+    setBg(null);
+    imgRef.current = null;
+  };
+
+  const clearAudio = () => {
+    audCtx().clearRect(0, 0, W, AUDIO_H);
+    setWave(false);
   };
 
   /* -------------- Handle font size changes -------------- */
-  const handleFontSizeChange = (boxId, newSize, shouldSnapshot = false) => {
-    setBoxes(bs => bs.map(x => x.id === boxId ? { ...x, fs: Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, newSize)) } : x));
-    if (shouldSnapshot) snapshot();
-  };
+const handleFontSizeChange = (boxId, newSize) => {
+  setBoxes(bs => bs.map(x => x.id === boxId ? { ...x, fs: Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, newSize)) } : x));
+};
 
   /* JSX -------------------------------------------------------------- */
   return (
@@ -502,6 +504,14 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
 
           <button className="tool-btn" onClick={clearAll} title="Clear All">
             <Trash2 size={20} />
+          </button>
+
+          <button className="tool-btn" onClick={clearImage} title="Clear Image">
+            <ImageIcon size={20} />
+          </button>
+
+          <button className="tool-btn" onClick={clearAudio} title="Clear Audio">
+            <Music size={20} />
           </button>
 
           <div className="color-picker-wrapper" title="Choose Color">
@@ -594,7 +604,7 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
                   <div className="size-toolbar">
                     <button
                       onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => handleFontSizeChange(b.id, b.fs - 2, true)}
+                      onClick={() => handleFontSizeChange(b.id, b.fs - 2)}
                     >
                       A-
                     </button>
@@ -615,7 +625,6 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
                             setBoxes(bs => bs.map(x => x.id === b.id ? { ...x, tempFs: undefined } : x));
                           }
                           e.target.blur();
-                          snapshot();
                         }
                         if (e.key === 'Escape') {
                           setBoxes(bs => bs.map(x => x.id === b.id ? { ...x, tempFs: undefined } : x));
@@ -630,7 +639,6 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
                         const val = parseInt(e.target.value);
                         if (!isNaN(val) && val >= MIN_FONT_SIZE && val <= MAX_FONT_SIZE) {
                           setBoxes(bs => bs.map(x => x.id === b.id ? { ...x, fs: val, tempFs: undefined } : x));
-                          snapshot();
                         } else {
                           setBoxes(bs => bs.map(x => x.id === b.id ? { ...x, tempFs: undefined } : x));
                         }
@@ -640,7 +648,7 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
                     />
                     <button
                       onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => handleFontSizeChange(b.id, b.fs + 2, true)}
+                      onClick={() => handleFontSizeChange(b.id, b.fs + 2)}
                     >
                       A+
                     </button>
@@ -679,7 +687,6 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
                       const handleMouseUp = () => {
                         document.removeEventListener('mousemove', handleResize);
                         document.removeEventListener('mouseup', handleMouseUp);
-                        snapshot();
                       };
                       
                       document.addEventListener('mousemove', handleResize);
@@ -745,7 +752,6 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
                       } : x));
                     }
 
-                    snapshot();
                   }}
                   onInput={(e) => {
                     const el = e.target;
