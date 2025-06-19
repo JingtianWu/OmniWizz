@@ -384,19 +384,26 @@ export default function App() {
           </div>
         )}
         <div className="prompt-box">
-          <textarea
-            value={promptText}
-            onChange={e => setPromptText(e.target.value)}
-            placeholder={pendingPrompt ? "Loading prompt..." : "Music prompt"}
-            disabled={pendingPrompt}
-          />
-          <textarea
-            value={lyricsText}
-            onChange={e => setLyricsText(e.target.value)}
-            placeholder={pendingLyrics ? "Loading lyrics..." : "Lyrics"}
-            disabled={pendingLyrics}
-            style={{ marginTop: "0.5rem" }}
-          />
+          <label>
+            <div className="prompt-label">Prompt</div>
+            <textarea
+              value={promptText}
+              onChange={e => setPromptText(e.target.value)}
+              placeholder={pendingPrompt ? "Loading prompt..." : "Music prompt"}
+              disabled={pendingPrompt}
+              className="styled-textarea"
+            />
+          </label>
+          <label>
+            <div className="prompt-label">Lyrics</div>
+            <textarea
+              value={lyricsText}
+              onChange={e => setLyricsText(e.target.value)}
+              placeholder={pendingLyrics ? "Loading lyrics..." : "Lyrics"}
+              disabled={pendingLyrics}
+              className="styled-textarea"
+            />
+          </label>
           <button
             className="generate-btn"
             onClick={regenerateMusic}
