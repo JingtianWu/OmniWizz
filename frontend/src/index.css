@@ -937,3 +937,68 @@ html { scroll-behavior: smooth; }
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.2) rgba(255, 255, 255, 0.05);
 }
+
+/* Vinyl control wrapper */
+.vinyl-control-wrapper {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Progress ring */
+.vinyl-progress-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  filter: drop-shadow(0 0 8px rgba(0, 255, 209, 0.3));
+  z-index: 6;
+}
+
+/* Invisible seek area for clicking */
+.vinyl-seek-area {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 4;
+}
+
+/* Time display */
+.vinyl-time-display {
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.85rem;
+  z-index: 6;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 0.3rem 0.6rem;
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Hover effect for seek area */
+.vinyl-seek-area:hover ~ .vinyl-progress-ring {
+  filter: drop-shadow(0 0 12px rgba(0, 255, 209, 0.5));
+}
+
+/* Adjust vinyl wrapper to fit within control wrapper */
+.vinyl-control-wrapper .vinyl-wrapper {
+  position: relative;
+  z-index: 5;
+}
+
+.vinyl-control-wrapper:hover .vinyl-progress-ring circle:last-of-type {
+  transform: scale(1.2);
+  transform-box: fill-box;
+  transform-origin: center;
+}

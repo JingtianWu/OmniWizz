@@ -46,6 +46,8 @@ export default function App() {
   /* Audio */
   const audioRef = useRef(null);
   const [playing, setPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
 
   /* Pagination */
   const [groupIdx, setGroupIdx] = useState(0);
@@ -339,6 +341,12 @@ export default function App() {
     return () => clearInterval(id);
   }, [runFolder, pendingPrompt, pendingLyrics]);
 
+  const progress = duration ? currentTime / duration : 0;
+  const theta    = -Math.PI / 2 + 2 * Math.PI * progress;
+  const R        = 90;
+  const cx       = 100 + R * Math.cos(theta);
+  const cy       = 100 + R * Math.sin(theta);
+
   /* RENDER */
   if (stage === "idle") {
     return (
@@ -538,14 +546,79 @@ export default function App() {
 
           {doMusic && (
             <>
-              <VinylIcon
-                playing={playing}
-                loading={pendingMusic}
-                onClick={() => {
-                  if (!audioRef.current) return;
-                  playing ? audioRef.current.pause() : audioRef.current.play();
-                }}
-              />
+              <div className="vinyl-control-wrapper">
+                <svg className="vinyl-progress-ring" viewBox="0 0 200 200">
+                  <circle
+                    cx="100"
+                    cy="100"
+                    r="90"
+                    fill="none"
+                    stroke="rgba(255,255,255,0.1)"
+                    strokeWidth="4"
+                  />
+                  <circle
+                    cx="100"
+                    cy="100"
+                    r="90"
+                    fill="none"
+                    stroke="url(#progressGradient)"
+                    strokeWidth="4"
+                    strokeDasharray={`${2 * Math.PI * 90}`}
+                    strokeDashoffset={`${2 * Math.PI * 90 * (1 - (currentTime / duration || 0))}`}
+                    transform="rotate(-90 100 100)"
+                    style={{ transition: 'stroke-dashoffset 0.1s linear' }}
+                  />
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r="6"
+                    fill="#fff"
+                    stroke="url(#progressGradient)"
+                    strokeWidth="2"
+                    style={{
+                      transition: 'cx 0.1s linear, cy 0.1s linear',
+                      filter: 'drop-shadow(0 0 6px rgba(0,255,209,0.6))',
+                      pointerEvents: 'none'
+                    }}
+                  />
+                  <defs>
+                    <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%"  style={{ stopColor: '#00ffd1', stopOpacity: 1 }} />
+                      <stop offset="50%" style={{ stopColor: '#11cfff', stopOpacity: 1 }} />
+                      <stop offset="100%" style={{ stopColor: '#c44cff', stopOpacity: 1 }} />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div 
+                  className="vinyl-seek-area"
+                  onClick={(e) => {
+                    if (!audioRef.current || !duration) return;
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+                    const x = e.clientX - rect.left - centerX;
+                    const y = e.clientY - rect.top - centerY;
+                    const angle = Math.atan2(y, x) + Math.PI / 2;
+                    const normalizedAngle = angle < 0 ? angle + 2 * Math.PI : angle;
+                    const progress = normalizedAngle / (2 * Math.PI);
+                    audioRef.current.currentTime = progress * duration;
+                  }}
+                />
+                <VinylIcon
+                  playing={playing}
+                  loading={pendingMusic}
+                  onClick={() => {
+                    if (!audioRef.current) return;
+                    playing ? audioRef.current.pause() : audioRef.current.play();
+                  }}
+                />
+                {duration > 0 && (
+                  <div className="vinyl-time-display">
+                    {Math.floor(currentTime / 60)}:{(Math.floor(currentTime % 60)).toString().padStart(2, '0')} / 
+                    {Math.floor(duration / 60)}:{(Math.floor(duration % 60)).toString().padStart(2, '0')}
+                  </div>
+                )}
+              </div>
               {audioUrl && (
                 <audio
                   ref={audioRef}
@@ -553,6 +626,8 @@ export default function App() {
                   onPlay={() => setPlaying(true)}
                   onPause={() => setPlaying(false)}
                   onEnded={() => setPlaying(false)}
+                  onLoadedMetadata={() => setDuration(audioRef.current.duration)}
+                  onTimeUpdate={() => setCurrentTime(audioRef.current.currentTime)}
                   style={{ display: "none" }}
                 />
               )}
