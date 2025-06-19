@@ -580,15 +580,15 @@ html { scroll-behavior: smooth; }
     rgba(0,0,0,0.3);
   border: 1px solid rgba(255,255,255,0.2);
   color: #fff;
-  padding: 1.5rem;
+  padding: 1.25rem;
   border-radius: 16px;
-  resize: vertical;
+  resize: none;
   font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
   font-size: 0.95rem;
   line-height: 1.6;
-  height: 300px;
-  min-height: 200px;
-  max-height: 400px;
+  height: 200px;
+  min-height: 150px;
+  max-height: 200px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   backdrop-filter: blur(10px);
   box-shadow: 
