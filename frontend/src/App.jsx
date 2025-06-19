@@ -412,28 +412,28 @@ export default function App() {
           </div>
         )}
         <div className="prompt-box">
-          <label>
+          <label className="prompt-field">
             <div className="prompt-label">Prompt</div>
             <textarea
               value={promptText}
               onChange={e => setPromptText(e.target.value)}
-              placeholder={pendingPrompt ? "Loading prompt..." : "Music prompt"}
+              placeholder={pendingPrompt ? "Loading prompt..." : "Enter music generation prompt"}
               disabled={pendingPrompt}
-              className="styled-textarea"
+              className="prompt-input"
             />
           </label>
-          <label>
+          <label className="lyrics-field">
             <div className="prompt-label">Lyrics</div>
             <textarea
               value={lyricsText}
               onChange={e => setLyricsText(e.target.value)}
-              placeholder={pendingLyrics ? "Loading lyrics..." : "Lyrics"}
+              placeholder={pendingLyrics ? "Loading lyrics..." : "Enter song lyrics"}
               disabled={pendingLyrics}
-              className="styled-textarea"
+              className="lyrics-input"
             />
           </label>
           <button
-            className="generate-btn"
+            className="regen-btn"
             onClick={regenerateMusic}
             disabled={regenLoading || pendingMusic}
           >
