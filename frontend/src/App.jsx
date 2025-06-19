@@ -99,11 +99,39 @@ export default function App() {
       ctx.drawImage(audioCanvas, 0, H);
     }
 
-    setCanvasUrl(off.toDataURL("image/png"));
+    // Create a separate canvas for display (main part only)
+    const displayCanvas = document.createElement("canvas");
+    displayCanvas.width = W;
+    displayCanvas.height = H;
+    const displayCtx = displayCanvas.getContext("2d");
+
+    displayCtx.drawImage(bgCanvas, 0, 0);
+    displayCtx.drawImage(inkCanvas, 0, 0);
+
+    art.querySelectorAll(".textbox").forEach(tb => {
+      const style = window.getComputedStyle(tb);
+      const fontSize = style.fontSize;
+      const fontFamily = style.fontFamily;
+      const color = style.color;
+
+      const artRect = art.getBoundingClientRect();
+      const tbRect = tb.getBoundingClientRect();
+      const x = tbRect.left - artRect.left;
+      const y = tbRect.top - artRect.top + parseInt(fontSize, 10);
+
+      displayCtx.font = `${fontSize} ${fontFamily}`;
+      displayCtx.fillStyle = color;
+      displayCtx.textBaseline = "top";
+      displayCtx.fillText(tb.innerText, x, y);
+    });
+
+    // Set canvas URL to display canvas (main part only)
+    setCanvasUrl(displayCanvas.toDataURL("image/png"));
     if (editorRef.current && editorRef.current.getSnapshot) {
       setCanvasState(editorRef.current.getSnapshot());
     }
 
+    // Send full canvas (with waveform if present) for processing
     off.toBlob(blob => {
       const file = new File([blob], "canvas.jpg", { type: "image/jpeg" });
       handleFile(file);

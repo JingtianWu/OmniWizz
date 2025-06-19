@@ -555,17 +555,19 @@ html { scroll-behavior: smooth; }
   position: absolute;
   bottom: 1rem;
   right: 1rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.6);
   font-size: 0.9rem;
   font-style: italic;
   pointer-events: none;
-  background: none !important;
-  border: none !important;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
 }
 
 .canvas-frame:hover .canvas-overlay {
-  opacity: 1;
-  background: rgba(0,0,0,0.5);
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(0, 0, 0, 0.7);
 }
 
 .prompt-box {
