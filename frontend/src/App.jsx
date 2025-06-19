@@ -67,7 +67,7 @@ export default function App() {
 
     const W = bgCanvas.width;
     const H = bgCanvas.height;
-    const hasWave = !!audioCanvas;
+    const hasWave = !!(audioCanvas && editorRef.current?.hasUserAudio?.());
 
     const finalHeight = hasWave ? H + audioCanvas.height : H;
     const off = document.createElement("canvas");
