@@ -380,6 +380,7 @@ export default function App() {
         {canvasUrl && (
           <div className="canvas-frame" onClick={returnToEditor}>
             <img src={canvasUrl} alt="final canvas" style={{ width: "100%" }} />
+            <div className="canvas-overlay">Click to re-edit</div>
           </div>
         )}
         <div className="prompt-box">
