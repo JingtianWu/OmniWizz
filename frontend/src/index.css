@@ -124,7 +124,7 @@ html { scroll-behavior: smooth; }
 /* ---------- BEAUTIFUL MOOD-BOARD / MAIN DISPLAY ---------- */
 .board-frame {
   position: relative;
-  width: min(95vw, 800px);
+  width: min(95vw, 1000px);
   height: 95vh;
   /* Beautiful gradient background with warm tones contrasting the cool app background */
   background: 
@@ -527,7 +527,6 @@ html { scroll-behavior: smooth; }
 }
 
 .done-left {
-  flex: 1.3;
   display: flex;
   flex-direction: column;
   justify-content: space-between;

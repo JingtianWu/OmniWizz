@@ -14,12 +14,12 @@ const VERBS = [
 ];
 
 
-function getPolarPosition(index, total, baseRadius, randomRange = 0) {
+function getPolarPosition(index, total, baseRadius, randomRange = 0, aspectX = 1.5, aspectY = 1) {
   const angle = (2 * Math.PI * index) / total;
   const randomOffset = (Math.random() - 0.5) * randomRange;
   const radius = baseRadius + randomOffset;
-  const x = 50 + radius * Math.cos(angle);
-  const y = 50 + radius * Math.sin(angle);
+  const x = 50 + aspectX * radius * Math.cos(angle);
+  const y = 50 + aspectY * radius * Math.sin(angle);
   return { x, y };
 }
 
@@ -283,15 +283,15 @@ export default function App() {
 
   /* Memoized random positions */
   const tagPositions = useMemo(() => {
-    return visibleTags.map((_, i) => {
-      const { x, y } = getPolarPosition(i, visibleTags.length, 50, 30);
+  return visibleTags.map((_, i) => {
+      const { x, y } = getPolarPosition(i, visibleTags.length, 50, 30, 1.4, 0.9);
       return { x, y };
     });
   }, [visibleTags]);
 
   const imagePositions = useMemo(() => {
     return visibleImages.map((_, i) => {
-      const { x, y } = getPolarPosition(i, visibleImages.length, 50, 30);
+      const { x, y } = getPolarPosition(i, visibleImages.length, 50, 30, 1.4, 0.9);
       const rotation = Math.floor(Math.random() * 12 - 6);
       return { x, y, rotation };
     });
