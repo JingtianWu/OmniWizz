@@ -558,7 +558,9 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
           {!bgSrc && showHint && (
             <div className="drop-zone" style={{ pointerEvents: 'none' }}>
               <div className="drop-text">
-                Draw or drop an image to begin.
+                Draw or do anything you like!
+                <br />
+                You can drop an image file here to set it as the background.
               </div>
             </div>
           )}

@@ -302,11 +302,21 @@ html { scroll-behavior: smooth; }
 /* Progress bar while generating */
 .vinyl-progress {
   width: 80px;
-  height: 8px;
+  height: 12px;
   background: rgba(255, 255, 255, 0.15);
-  border-radius: 3px;
+  border-radius: 8px;
   overflow: hidden;
   position: relative;
+}
+
+.vinyl-progress-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.85);
+  pointer-events: none;
 }
 
 .vinyl-progress-bar {

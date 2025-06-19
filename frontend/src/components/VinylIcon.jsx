@@ -86,6 +86,7 @@ export default function VinylIcon({ playing, loading = false, onClick }) {
                   transition: "width 0.2s linear",
                 }}
               />
+              <span className="vinyl-progress-label">Composing...</span>
             </div>
           ) : playing ? (
             <div className="dots">
