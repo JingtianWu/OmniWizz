@@ -82,11 +82,42 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
   useEffect(snapshot, []);                               // save blank initial
 
   useImperativeHandle(ref, () => ({
-    getSnapshot: () => makeSnapshot(),
+    getSnapshot: () => ({
+      ink: makeSnapshot(),
+      bg: bgSrc,
+      boxes,
+      hasWave,
+      audio: hasWave ? audRef.current.toDataURL("image/png") : null
+    }),
     loadSnapshot: snap => {
-      restore(snap);
-      histRef.current.states = [snap];
-      histRef.current.idx = 0;
+      if (!snap) return;
+
+      if (snap.ink) {
+        restore(snap.ink);
+        histRef.current.states = [snap.ink];
+        histRef.current.idx = 0;
+      }
+
+      if (snap.bg) {
+        const im = new Image();
+        im.onload = () => { imgRef.current = im; setBg(snap.bg); };
+        im.src = snap.bg;
+      } else {
+        setBg(null);
+        imgRef.current = null;
+      }
+
+      setBoxes(Array.isArray(snap.boxes) ? snap.boxes : []);
+
+      if (snap.audio) {
+        const im = new Image();
+        im.onload = () => { audCtx().drawImage(im, 0, 0); };
+        im.src = snap.audio;
+        setWave(true);
+      } else {
+        audCtx().clearRect(0, 0, W, AUDIO_H);
+        setWave(false);
+      }
     },
     dismissHint: () => setShowHint(false),
     hasUserAudio: () => hasWave
@@ -805,8 +836,7 @@ const handleFontSizeChange = (boxId, newSize) => {
                         ? {
                             ...x,
                             width: Math.min(W - x.x, Math.max(x.width || 0, newWidth)),
-                            height: Math.min(H - x.y, Math.max(x.height || 0, newHeight)),
-                            text: el.innerText
+                            height: Math.min(H - x.y, Math.max(x.height || 0, newHeight))
                           }
                         : x
                     ));
