@@ -171,15 +171,12 @@ class ImageToTagsProcessor(BaseLLMProcessor):
 
     def _mock_generate(self):
         return (
-            "**inspirational tags**: [liquid sunrise shimmer, echoing ocean drums, "
-            "celestial mountain chords, sun-kissed lullaby, cloud-swept reverie, "
-            "surf-string arpeggios, high-tide crescendos, horizon-harp resonance, "
-            "crystal dewdrop pulses, twilight breeze vocals, lunar tide harmonics, "
-            "prism wave textures, amber dusk motifs, starlight cascade loops, "
-            "marshland echo layers, velvet swell undertones, neon reef staccato, "
-            "driftwood melody drift, glacier hum ambient, forest canopy reverb, "
-            "ember glow motifs, solar flare synth washes, polar night drones, "
-            "golden hour fanfare]"
+            "**inspirational tags**: [cathedral blaze shimmer, gilded vault echoes, stained glass resonance, "
+            "emberfall choir drift, marble dusk pulse, arcane reverb bloom, lightfall crescendo, sacred hush texture, "
+            "vaulted halo drift, chandelier thrum, gold-draped silence, catacomb bass undertow, divine delay shimmer, "
+            "twilight liturgy pads, solemn flare pulse, celestial chamber bloom, lightbeam swell, echo altar mist, "
+            "granite choir ghost, ritual flame rhythm, midnight votive haze, gothic cadence glint, glory dusk rise, "
+            "archlight ritual drone]"
         )
 
     def _build_messages(self):
