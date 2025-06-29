@@ -14,6 +14,10 @@ from diffrhythm_module import run_inference
 
 app = FastAPI()
 
+@app.get("/")
+def root():
+    return {"status": "OmniWizz API is live"}
+
 UPLOAD_DIR = Path(__file__).parent / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
 OUTPUT_DIR = Path(__file__).parent.parent / "output"
