@@ -1,0 +1,6 @@
+Pillow
+qwen-vl-utils==0.0.8
+fastapi
+uvicorn
+requests
+python-multipart
