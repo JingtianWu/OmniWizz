@@ -77,12 +77,10 @@ omniwizz/
 3. On GitHub, open the repository settings → **Pages** and choose **Deploy from a branch** with the `main` branch and `/docs` folder.
 4. Visit `https://<username>.github.io/<repository-name>/` to access OmniWizz.
 
-## Tests
-Run unit pipelines in safe offline mode:
-```bash
-python backend/test_pipelines.py
-```
 
+For offline demos, enable `TEST_MODE` in `backend/config.py` to use the bundled
+mock data. This mode allows the API and frontend to run without external
+dependencies.
 
 ---
 

@@ -22,10 +22,8 @@ phonemizer==3.3.0
 inflect==7.5.0
 py3langid
 torch
-transformers
 Pillow
 qwen-vl-utils==0.0.8
 fastapi
 uvicorn
 requests
-pillow
