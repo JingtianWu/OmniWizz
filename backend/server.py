@@ -14,7 +14,7 @@ from diffrhythm_module import run_inference
 
 app = FastAPI()
 
-@app.get("/")
+@app.get("/", include_in_schema=False)
 def root():
     return {"status": "OmniWizz API is live"}
 
