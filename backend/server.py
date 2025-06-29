@@ -12,10 +12,6 @@ from pipeline import (
 )
 from diffrhythm_module import run_inference
 
-import sys
-import os
-sys.path.append(os.path.dirname(__file__))
-
 app = FastAPI()
 
 UPLOAD_DIR = Path(__file__).parent / "uploads"
