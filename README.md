@@ -1,6 +1,6 @@
-# Multisense — Multimodal Media Transformation Pipeline
+# OmniWizz — Multimodal Media Transformation Pipeline
 
-**Multisense** is a comprehensive multimodal framework—accepting **text**, **images**, and **audio** inputs and producing any combination of these outputs.
+**OmniWizz** is a comprehensive multimodal framework—accepting **text**, **images**, and **audio** inputs and producing any combination of these outputs.
 
 > **Ultimate Goal:** Let users supply any combination of text, image, or audio as input, and receive any combination of these modalities as output, according to their creative or analytic needs.
 
@@ -19,7 +19,7 @@
 ## Repository Structure
 
 ```
-multisense/
+omniwizz/
 ├── backend/                 
 │   ├── llm_module.py        ← LLM wrapper for multimodal understanding
 │   ├── diffrhythm_module.py ← post-process lyrics & invoke singing synthesis
@@ -39,8 +39,7 @@ multisense/
 └── README.md                
 ```
 
-@@ -50,35 +58,42 @@ multisense/
-   source multisense-env/bin/activate
+   source omniwizz-env/bin/activate
 
    # Install deps
    pip install -r requirements.txt
@@ -63,7 +62,20 @@ multisense/
    npm start
    ```
 
+
    Open **[http://localhost:3000](http://localhost:3000)**, then drag & drop an image to generate music.
+
+## Deploying to GitHub Pages
+
+1. Build the production bundle:
+   ```bash
+   cd frontend
+   npm install
+   npm run build
+   ```
+2. Copy the contents of `frontend/build/` into a new folder named `docs/` at the repository root. Commit this folder to `main`.
+3. On GitHub, open the repository settings → **Pages** and choose **Deploy from a branch** with the `main` branch and `/docs` folder.
+4. Visit `https://<username>.github.io/<repository-name>/` to access OmniWizz.
 
 ## Tests
 Run unit pipelines in safe offline mode:

@@ -17,7 +17,7 @@ test-output/
 
 # Virtual environments
 venv/
-multisense-env/
+omniwizz-env/
 
 # OS trash
 .DS_Store
