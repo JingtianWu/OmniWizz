@@ -3,6 +3,8 @@ import EditorCanvas from "./components/EditorCanvas";
 import VinylIcon from "./components/VinylIcon";
 import "./index.css";
 
+const BACKEND_URL = "https://omniwizz.onrender.com";
+
 const VERBS = [
   "Dreaming in pixels",
   "Composing wonders",
@@ -185,7 +187,7 @@ export default function App() {
       .join(",");
 
     try {
-      const res = await fetch(`/generate?modes=${modes}&language=${language}`, {
+      const res = await fetch(`${BACKEND_URL}/generate?modes=${modes}&language=${language}`, {
         method: "POST",
         body: data,
       });
@@ -260,7 +262,7 @@ export default function App() {
       data.append("folder", runFolder);
       data.append("prompt", promptText);
       data.append("lyrics", lyricsText);
-      const res = await fetch("/regenerate", { method: "POST", body: data });
+      const res = await fetch(`${BACKEND_URL}/regenerate`, { method: "POST", body: data });
       const j = await res.json();
       if (j.audio_url) {
         setAudioUrl(j.audio_url + `?t=${Date.now()}`);
@@ -323,7 +325,7 @@ export default function App() {
     const check = async () => {
       if (pendingPrompt) {
         try {
-          const r = await fetch(`/output/${runFolder}/prompt.txt`, { cache: "no-store" });
+          const r = await fetch(`${BACKEND_URL}/output/${runFolder}/prompt.txt`, { cache: "no-store" });
           if (r.ok) {
             setPromptText(await r.text());
             setPendingPrompt(false);
@@ -332,7 +334,7 @@ export default function App() {
       }
       if (pendingLyrics) {
         try {
-          const r = await fetch(`/output/${runFolder}/lyrics.lrc`, { cache: "no-store" });
+          const r = await fetch(`${BACKEND_URL}/output/${runFolder}/lyrics.lrc`, { cache: "no-store" });
           if (r.ok) {
             setLyricsText(await r.text());
             setPendingLyrics(false);
