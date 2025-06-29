@@ -2,6 +2,7 @@
   "name": "diffui",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://JingtianWu.github.io/OmniWizz",
   "proxy": "http://localhost:8000",
   "dependencies": {
     "fabric": "^6.7.0",
