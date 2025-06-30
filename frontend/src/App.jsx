@@ -7,7 +7,11 @@ const BACKEND_URL = "https://omniwizz.onrender.com";
 
 function withBase(path) {
   if (!path) return path;
-  return path.startsWith("http") ? path : `${BACKEND_URL}${path}`;
+  try {
+    return new URL(path, BACKEND_URL).toString();
+  } catch {
+    return path;
+  }
 }
 
 const VERBS = [
