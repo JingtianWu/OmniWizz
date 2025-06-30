@@ -1,7 +1,7 @@
 import shutil
 from pathlib import Path
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
+from fastapi import FastAPI, UploadFile, Request, File, Form, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
 
 from pipeline import (
@@ -14,8 +14,8 @@ from diffrhythm_module import run_inference
 
 app = FastAPI()
 
-@app.get("/", include_in_schema=False)
-def root():
+@app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
+def root(request: Request):
     return {"status": "OmniWizz API is live"}
 
 UPLOAD_DIR = Path(__file__).parent / "uploads"
