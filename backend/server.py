@@ -3,6 +3,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, UploadFile, Request, File, Form, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 from pipeline import (
     _make_run_dir,
@@ -13,6 +14,13 @@ from pipeline import (
 from diffrhythm_module import run_inference
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://jingtianwu.github.io"],  # or ["*"] for testing
+    allow_methods=["*"],
+    allow_headers=["*"],
+    allow_credentials=True,
+)
 
 @app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
 def root(request: Request):
