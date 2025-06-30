@@ -1,22 +1,34 @@
 import torch
 from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
 from qwen_vl_utils import process_vision_info
+from config import TEST_MODE
 
 class LLMProcessor:
     def __init__(self, image_path, language="en"):
         self.image_path = image_path
         self.language = language
-        self.model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
-            "Qwen/Qwen2.5-VL-3B-Instruct",
-            torch_dtype=torch.bfloat16,
-            attn_implementation="eager",
-            device_map="auto"
+        self.device = torch.device(
+            "mps" if torch.backends.mps.is_available() else
+            "cuda" if torch.cuda.is_available() else
+            "cpu"
         )
-        self.processor = AutoProcessor.from_pretrained("Qwen/Qwen2.5-VL-3B-Instruct")
-        self.device = torch.device("mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu")
-        self.model.to(self.device)
+
+        if not TEST_MODE:
+            self.model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+                "Qwen/Qwen2.5-VL-3B-Instruct",
+                torch_dtype=torch.bfloat16,
+                attn_implementation="eager",
+                device_map="auto"
+            )
+            self.processor = AutoProcessor.from_pretrained("Qwen/Qwen2.5-VL-3B-Instruct")
+            self.model.to(self.device)
+        else:
+            self.model = None
+            self.processor = None
 
     def generate(self):
+        if self.model is None or self.processor is None:
+            raise RuntimeError("Model not loaded (TEST_MODE enabled)")
         messages = self._build_messages()
         text = self.processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
         image_inputs, video_inputs = process_vision_info(messages)

@@ -12,7 +12,9 @@
 - **Image → Tags** for creativity prompts
 - **Image → Related Images** via SerpAPI (`SERPAPI_API_KEY` required)
 - REST endpoint `/generate` wraps all pipelines
-- Toggle `TEST_MODE` in `backend/config.py` for offline demos
+- Toggle `TEST_MODE` in `backend/config.py` for offline demos. When enabled, the
+  large Qwen model is not downloaded, which is required on memory-constrained
+  deployments.
 
 ---
 
@@ -78,8 +80,9 @@ omniwizz/
 4. Visit `https://<username>.github.io/<repository-name>/` to access OmniWizz.
 
 
-For offline demos, enable `TEST_MODE` in `backend/config.py` to use the bundled
-mock data. This mode allows the API and frontend to run without external
+For offline demos or memory-constrained deployments, enable `TEST_MODE` in
+`backend/config.py`. This skips downloading the large vision-language model and
+uses bundled mock data so the API and frontend can run without external
 dependencies.
 
 ---

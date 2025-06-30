@@ -24,27 +24,36 @@ class BaseLLMProcessor:
         self.top_p = top_p
         self.do_sample = do_sample
 
-        # Load model and processor
-        self.model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
-            "Qwen/Qwen2.5-VL-3B-Instruct",
-            torch_dtype=torch.bfloat16,
-            attn_implementation="eager",
-            device_map="auto"
-        )
-        self.processor = AutoProcessor.from_pretrained("Qwen/Qwen2.5-VL-3B-Instruct")
+        # Device is set regardless of mode
         self.device = torch.device(
             "mps" if torch.backends.mps.is_available() else
             "cuda" if torch.cuda.is_available() else
             "cpu"
         )
-        self.model.to(self.device)
+
+        if not TEST_MODE:
+            # Load model and processor only when not in TEST_MODE
+            self.model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+                "Qwen/Qwen2.5-VL-3B-Instruct",
+                torch_dtype=torch.bfloat16,
+                attn_implementation="eager",
+                device_map="auto"
+            )
+            self.processor = AutoProcessor.from_pretrained("Qwen/Qwen2.5-VL-3B-Instruct")
+            self.model.to(self.device)
+        else:
+            self.model = None
+            self.processor = None
 
     def generate(self) -> str:
-        if TEST_MODE:
+        if TEST_MODE or self.model is None or self.processor is None:
             return self._mock_generate()
         return self._real_generate()
 
     def _real_generate(self) -> str:
+        if self.model is None or self.processor is None:
+            raise RuntimeError("Model not loaded")
+
         messages = self._build_messages()
         text = self.processor.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True
