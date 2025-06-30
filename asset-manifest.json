@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/OmniWizz/static/css/main.6c60b323.css",
+    "main.js": "/OmniWizz/static/js/main.17d0746b.js",
+    "index.html": "/OmniWizz/index.html",
+    "main.6c60b323.css.map": "/OmniWizz/static/css/main.6c60b323.css.map",
+    "main.17d0746b.js.map": "/OmniWizz/static/js/main.17d0746b.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.6c60b323.css",
+    "static/js/main.17d0746b.js"
+  ]
+}

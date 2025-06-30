@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+
+# VSCode or IDE stuff
+.vscode/
+.idea/
+
+# Backend runtime outputs
+uploads/
+output/
+test-output/
+*.log
+
+# Virtual environments
+venv/
+omniwizz-env/
+
+# OS trash
+.DS_Store
+
+# Model weights
+backend/pretrained/
+
+# Frontend
+node_modules/
+dist/
+build/
+
+# Environment variables
+.env
+.env.*
+
+# Testing and coverage
+coverage/
+*.cover
+coverage.xml
+*.lcov
+
+# Jupyter
+.ipynb_checkpoints/
