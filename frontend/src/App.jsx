@@ -5,6 +5,11 @@ import "./index.css";
 
 const BACKEND_URL = "https://omniwizz.onrender.com";
 
+function withBase(path) {
+  if (!path) return path;
+  return path.startsWith("http") ? path : `${BACKEND_URL}${path}`;
+}
+
 const VERBS = [
   "Dreaming in pixels",
   "Composing wonders",
@@ -198,15 +203,15 @@ export default function App() {
         setTags(Array.isArray(arr) ? arr : []);
       }
       if (j.music) {
-        setAudioUrl(j.music.audio_url);
+        setAudioUrl(withBase(j.music.audio_url));
         setPendingMusic(!!j.music.pending);
         setRunFolder(j.music.folder || "");
         setPendingPrompt(true);
         setPendingLyrics(true);
         try {
           const [prResp, lyrResp] = await Promise.all([
-            fetch(j.music.prompt_url),
-            fetch(j.music.lyrics_url)
+            fetch(withBase(j.music.prompt_url)),
+            fetch(withBase(j.music.lyrics_url))
           ]);
           if (prResp.ok) {
             setPromptText(await prResp.text());
@@ -220,7 +225,7 @@ export default function App() {
       }
       if (j.images) {
         const arr = j.images.images ?? j.images;
-        setImages(Array.isArray(arr) ? arr : []);
+        setImages(Array.isArray(arr) ? arr.map(withBase) : []);
       }
     } catch (err) {
       console.error("Generation failed:", err);
@@ -265,7 +270,7 @@ export default function App() {
       const res = await fetch(`${BACKEND_URL}/regenerate`, { method: "POST", body: data });
       const j = await res.json();
       if (j.audio_url) {
-        setAudioUrl(j.audio_url + `?t=${Date.now()}`);
+        setAudioUrl(withBase(j.audio_url) + `?t=${Date.now()}`);
       }
     } catch (err) {
       console.error("Regenerate failed:", err);
