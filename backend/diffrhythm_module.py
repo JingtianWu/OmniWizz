@@ -2,7 +2,7 @@ import re
 import shutil
 import requests
 from pathlib import Path
-from config import TEST_MODE, DIFFRHYTHM_API_KEY
+from config import TEST_MODE, PIAPI_KEY
 
 def extract_prompt_and_lyrics(output, lang="en"):
     """Return (prompt, lyrics) parsed from raw model output."""
@@ -89,7 +89,7 @@ def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_
     (out_dir / "lyrics.lrc").write_text(lrc, encoding="utf-8")
 
     payload = {"prompt": prompt, "lyrics": lrc}
-    headers = {"Authorization": f"Bearer {DIFFRHYTHM_API_KEY}"}
+    headers = {"Authorization": f"Bearer {PIAPI_KEY}"}
     res = requests.post(
         "https://api.diffrhythm.com/generate",
         json=payload,

@@ -12,9 +12,9 @@
 - **Image → Tags** for creativity prompts
 - **Image → Related Images** via SerpAPI (`SERPAPI_API_KEY` required)
 - REST endpoint `/generate` wraps all pipelines
-- Toggle `TEST_MODE` in `backend/config.py` for offline demos. When enabled, the
-  backend uses bundled mock data and avoids contacting the GPT‑4.1‑nano and
-  DiffRhythm APIs, suitable for memory‑constrained deployments.
+- Toggle `TEST_MODE` (via environment variable or in `backend/config.py`) for offline demos.
+  When enabled, the backend uses bundled mock data and avoids contacting the
+  GPT‑4.1‑nano and DiffRhythm APIs, suitable for memory‑constrained deployments.
 
 ---
 
@@ -47,9 +47,10 @@ omniwizz/
    pip install -r requirements.txt
    ```
 
-   Set the `OPENAI_API_KEY` and `DIFFRHYTHM_API_KEY` environment variables
+   Set the `OPENAI_API_KEY` and `PIAPI_KEY` environment variables
    before running the backend in production mode. You can export them in your
-   shell or place them in a `.env` file that your process reads.
+   shell or place them in a `.env` file that your process reads. Set
+   `TEST_MODE=false` in the environment to enable real API calls.
 
 3. **Run the API**
 
@@ -84,9 +85,10 @@ omniwizz/
 4. Visit `https://<username>.github.io/<repository-name>/` to access OmniWizz.
 
 
-For offline demos or memory-constrained deployments, enable `TEST_MODE` in
-`backend/config.py`. This skips calling the remote GPT and DiffRhythm services
-and uses bundled mock data so the API and frontend can run without external
+For offline demos or memory-constrained deployments, enable `TEST_MODE` either
+in `backend/config.py` or via an environment variable. This skips calling the
+remote GPT and DiffRhythm services and uses bundled mock data so the API and
+frontend can run without external
 dependencies.
 
 ---
