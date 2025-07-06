@@ -3,7 +3,10 @@ import EditorCanvas from "./components/EditorCanvas";
 import VinylIcon from "./components/VinylIcon";
 import "./index.css";
 
-const BACKEND_URL = "https://omniwizz.onrender.com";
+const BACKEND_URL =
+  process.env.NODE_ENV === "development"
+    ? ""
+    : "https://omniwizz.onrender.com";
 
 function withBase(path) {
   if (!path) return path;

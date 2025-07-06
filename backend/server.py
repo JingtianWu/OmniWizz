@@ -13,6 +13,11 @@ from pipeline import (
 )
 from diffrhythm_module import run_inference
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,

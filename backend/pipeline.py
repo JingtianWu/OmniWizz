@@ -3,6 +3,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 import shutil
+from llm_processors import _to_data_url
 from config import TEST_MODE
 
 from llm_processors import (
@@ -32,7 +33,7 @@ def generate_music_from_image(
     shutil.copy2(image_path, out_dir / Path(image_path).name)
 
     # 2) LLM → prompt + lyrics
-    uri = f"file://{image_path}"
+    uri = _to_data_url(image_path)
     proc = ImageToLyricsProcessor(uri, language)
     try:
         raw = proc.generate()
@@ -73,7 +74,7 @@ def generate_tags_from_image(
     out_dir = run_dir or _make_run_dir()
     shutil.copy2(image_path, out_dir / Path(image_path).name)
 
-    uri = f"file://{image_path}"
+    uri = _to_data_url(image_path)
     proc = ImageToTagsProcessor(uri, language)
     try:
         tags = proc.process()
@@ -101,7 +102,7 @@ def generate_images_from_image(
     image_dir.mkdir(exist_ok=True)
 
     # 1) LLM → entities
-    uri = f"file://{image_path}"
+    uri = _to_data_url(image_path)
     proc = ImageToVisualEntitiesProcessor(uri, language)
     try:
         entities = proc.process()

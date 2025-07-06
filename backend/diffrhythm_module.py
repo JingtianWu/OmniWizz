@@ -99,7 +99,7 @@ def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_
         },
         "config": {},
     }
-    headers = {"x-api-key": PIAPI_KEY}
+    headers = {"X-API-Key": PIAPI_KEY}
 
     res = requests.post(
         "https://api.piapi.ai/api/v1/task",
@@ -113,25 +113,35 @@ def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_
     if not task_id:
         raise RuntimeError("No task_id returned from DiffRhythm API")
 
-    for _ in range(60):
+    for _ in range(75):
         stat_res = requests.get(
             f"https://api.piapi.ai/api/v1/task/{task_id}",
-            headers={"X-API-Key": PIAPI_KEY},
+            headers=headers,
             timeout=60,
         )
         stat_res.raise_for_status()
         stat_data = stat_res.json()
         status = stat_data.get("data", {}).get("status") or stat_data.get("status")
+        print("📄 DiffRhythm poll status data:", stat_data)
         if status == "completed":
-            works = stat_data.get("data", {}).get("works") or stat_data.get("works")
-            if works:
-                audio_url = works[0]["resource"]["resource"]
+            audio_url = (
+                stat_data.get("data", {}).get("output", {}).get("audio_url")
+                or stat_data.get("data", {}).get("outputs", [{}])[0].get("url")         # multi-output schema
+                or stat_data.get("data", {}).get("works",   [{}])[0]
+                    .get("resource", {}).get("resource")                             # legacy schema
+                or stat_data.get("output", {}).get("audio_url")                         # top-level fallback
+                or stat_data.get("outputs", [{}])[0].get("url")
+                or stat_data.get("works",   [{}])[0].get("resource", {}).get("resource")
+            )
+
+            if audio_url:
                 wav_res = requests.get(audio_url, timeout=120)
                 wav_res.raise_for_status()
-                audio_path = out_dir / "audio.wav"
+                audio_path = out_dir / "audio.wav"      # keep filename stable for frontend
                 audio_path.write_bytes(wav_res.content)
                 return str(audio_path)
-            raise RuntimeError("No works found in completed task")
+
+            raise RuntimeError("No audio URL found in completed task")
         if status in {"failed", "error"}:
             raise RuntimeError(f"DiffRhythm task failed: {status}")
         time.sleep(5)

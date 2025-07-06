@@ -3,7 +3,14 @@ import re
 import ast
 from diffrhythm_module import extract_prompt_and_lyrics, normalize_lrc
 from config import TEST_MODE, OPENAI_API_KEY
+import base64
+import mimetypes
 
+def _to_data_url(path: str) -> str:
+    mime, _ = mimetypes.guess_type(path)
+    with open(path, "rb") as f:
+        b64 = base64.b64encode(f.read()).decode()
+    return f"data:{mime or 'application/octet-stream'};base64,{b64}"
 
 class BaseLLMProcessor:
     def __init__(
@@ -40,11 +47,14 @@ class BaseLLMProcessor:
                 if c.get("type") == "text":
                     content_items.append({"type": "text", "text": c.get("text", "")})
                 elif c.get("type") == "image":
-                    content_items.append({"type": "image_url", "image_url": {"url": c.get("image")}})
+                    url = c.get("image")
+                    if url.startswith("file://"):
+                        url = _to_data_url(url[7:])  # remove "file://" and convert to data URL
+                    content_items.append({"type": "image_url", "image_url": {"url": url}})
             oa_msgs.append({"role": m.get("role", "user"), "content": content_items})
 
         payload = {
-            "model": "gpt-4.1-nano",
+            "model": "gpt-4.1-mini",
             "messages": oa_msgs,
             "max_tokens": self.max_new_tokens,
             "temperature": self.temperature,
