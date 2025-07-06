@@ -12,7 +12,7 @@ from llm_processors import (
     ImageToVisualEntitiesProcessor,
 )
 from diffrhythm_module import run_inference
-from serpapi_module import fetch_images_for_entity
+from midjourney_module import generate_images
 
 OUTPUT_ROOT = Path(__file__).parent.parent / "output"
 
@@ -118,14 +118,17 @@ def generate_images_from_image(
         all_paths = [str(p) for p in image_dir.glob("*.*")]
         return entities, out_dir, all_paths
 
-    # 3) REAL: fetch per entity
+    # 3) REAL: generate images via Midjourney per entity
     all_paths = []
     for ent in entities:
         try:
-            imgs = fetch_images_for_entity(ent, num=per_entity, out_dir=image_dir)
-            all_paths.extend(imgs)
+            imgs = generate_images(ent, out_dir=image_dir)
+            if imgs:
+                if per_entity and len(imgs) > per_entity:
+                    imgs = imgs[:per_entity]
+                all_paths.extend(imgs)
         except Exception as e:
-            print(f"Image fetch failed for {ent}: {e}")
+            print(f"Image generation failed for {ent}: {e}")
 
     if not all_paths:
         print("No images fetched; using mock images")
