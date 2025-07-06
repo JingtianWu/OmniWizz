@@ -50,7 +50,10 @@ omniwizz/
    Set the `OPENAI_API_KEY` and `PIAPI_KEY` environment variables
    before running the backend in production mode. You can export them in your
    shell or place them in a `.env` file that your process reads. Set
-   `TEST_MODE=false` in the environment to enable real API calls.
+   `TEST_MODE=false` in the environment to enable real API calls. When disabled,
+   the backend submits lyrics and prompts to the PiAPI DiffRhythm service via
+   `POST https://api.piapi.ai/api/v1/task` and polls `GET /api/v1/task/{task_id}`
+   until completion.
 
 3. **Run the API**
 
