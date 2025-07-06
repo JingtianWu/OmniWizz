@@ -1,12 +1,8 @@
 import re
-import time
-import platform
-import sys
-import os
-import runpy
 import shutil
+import requests
 from pathlib import Path
-from config import TEST_MODE
+from config import TEST_MODE, DIFFRHYTHM_API_KEY
 
 def extract_prompt_and_lyrics(output, lang="en"):
     """Return (prompt, lyrics) parsed from raw model output."""
@@ -88,54 +84,20 @@ def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_
         return str(fake_wav)
 
     # ==== NORMAL REAL MODE ====
-    project_root = Path(__file__).parent.parent
-    repo_root    = project_root / "DiffRhythm"
-
-    # 1) write normalized .lrc
     prompt, lyrics = extract_prompt_and_lyrics(assistant_reply)
     lrc = normalize_lrc(lyrics)
     (out_dir / "lyrics.lrc").write_text(lrc, encoding="utf-8")
 
-    # 2) set up environment
-    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-    if platform.system() == 'Darwin':
-        os.environ['PHONEMIZER_ESPEAK_LIBRARY'] = (
-          '/opt/homebrew/Cellar/espeak-ng/1.52.0/lib/libespeak-ng.dylib'
-        )
+    payload = {"prompt": prompt, "lyrics": lrc}
+    headers = {"Authorization": f"Bearer {DIFFRHYTHM_API_KEY}"}
+    res = requests.post(
+        "https://api.diffrhythm.com/generate",
+        json=payload,
+        headers=headers,
+        timeout=120,
+    )
+    res.raise_for_status()
 
-    # 3) build args for infer.py
-    args = [
-      "--lrc-path",   str(out_dir/"lyrics.lrc"),
-      "--ref-prompt", prompt,
-      "--audio-length","95",
-      "--repo-id",    "ASLP-lab/DiffRhythm-1_2",
-      "--output-dir", str(out_dir),
-      "--chunked",
-      "--batch-infer-num","5"
-    ]
-
-    infer_dir   = repo_root / "infer"
-    infer_script= infer_dir  / "infer.py"
-
-    # 4) hack cwd, sys.argv & sys.path so infer.py just works
-    old_cwd  = os.getcwd()
-    old_argv = sys.argv[:]
-    sys.argv = [str(infer_script)] + args
-    sys.path.insert(0, str(repo_root))
-    sys.path.insert(0, str(infer_dir))
-    try:
-        os.chdir(repo_root)
-        runpy.run_path(str(infer_script), run_name="__main__")
-    finally:
-        os.chdir(old_cwd)
-        sys.argv = old_argv
-        sys.path.pop(0)
-        sys.path.pop(0)
-
-    # 5) find the generated .wav and rename
-    wavs = sorted(out_dir.glob("*.wav"))
-    if not wavs:
-        raise FileNotFoundError("No .wav generated")
-    final = out_dir/"audio.wav"
-    wavs[-1].rename(final)
-    return str(final)
+    audio_path = out_dir / "audio.wav"
+    audio_path.write_bytes(res.content)
+    return str(audio_path)

@@ -1,10 +1,8 @@
-import torch
-from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
-from qwen_vl_utils import process_vision_info
+import requests
 import re
 import ast
 from diffrhythm_module import extract_prompt_and_lyrics, normalize_lrc
-from config import TEST_MODE
+from config import TEST_MODE, OPENAI_API_KEY
 
 
 class BaseLLMProcessor:
@@ -24,60 +22,47 @@ class BaseLLMProcessor:
         self.top_p = top_p
         self.do_sample = do_sample
 
-        # Device is set regardless of mode
-        self.device = torch.device(
-            "mps" if torch.backends.mps.is_available() else
-            "cuda" if torch.cuda.is_available() else
-            "cpu"
-        )
-
-        if not TEST_MODE:
-            # Load model and processor only when not in TEST_MODE
-            self.model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
-                "Qwen/Qwen2.5-VL-3B-Instruct",
-                torch_dtype=torch.bfloat16,
-                attn_implementation="eager",
-                device_map="auto"
-            )
-            self.processor = AutoProcessor.from_pretrained("Qwen/Qwen2.5-VL-3B-Instruct")
-            self.model.to(self.device)
-        else:
-            self.model = None
-            self.processor = None
+        # in production we use the hosted GPT model; no local weights loaded
 
     def generate(self) -> str:
-        if TEST_MODE or self.model is None or self.processor is None:
+        if TEST_MODE:
             return self._mock_generate()
         return self._real_generate()
 
     def _real_generate(self) -> str:
-        if self.model is None or self.processor is None:
-            raise RuntimeError("Model not loaded")
-
         messages = self._build_messages()
-        text = self.processor.apply_chat_template(
-            messages, tokenize=False, add_generation_prompt=True
-        )
-        image_inputs, video_inputs = process_vision_info(messages)
-        inputs = self.processor(
-            text=[text], images=image_inputs, videos=video_inputs,
-            padding=True, return_tensors="pt"
-        )
-        inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
-        gen_ids = self.model.generate(
-            **inputs,
-            max_new_tokens=self.max_new_tokens,
-            temperature=self.temperature,
-            top_p=self.top_p,
-            do_sample=self.do_sample
-        )
+        # Convert Qwen-style message format to OpenAI format
+        oa_msgs = []
+        for m in messages:
+            content_items = []
+            for c in m.get("content", []):
+                if c.get("type") == "text":
+                    content_items.append({"type": "text", "text": c.get("text", "")})
+                elif c.get("type") == "image":
+                    content_items.append({"type": "image_url", "image_url": {"url": c.get("image")}})
+            oa_msgs.append({"role": m.get("role", "user"), "content": content_items})
 
-        decoded = self.processor.batch_decode(
-            [out_ids[len(in_ids):] for in_ids, out_ids in zip(inputs["input_ids"], gen_ids)],
-            skip_special_tokens=True
-        )[0]
-        return decoded
+        payload = {
+            "model": "gpt-4.1-nano",
+            "messages": oa_msgs,
+            "max_tokens": self.max_new_tokens,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+        }
+        headers = {
+            "Authorization": f"Bearer {OPENAI_API_KEY}",
+            "Content-Type": "application/json",
+        }
+
+        res = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            json=payload,
+            headers=headers,
+            timeout=60,
+        )
+        res.raise_for_status()
+        return res.json()["choices"][0]["message"]["content"]
 
     def process(self):
         raw = self.generate()
