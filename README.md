@@ -54,6 +54,8 @@ omniwizz/
    the backend submits lyrics and prompts to the PiAPI DiffRhythm service via
    `POST https://api.piapi.ai/api/v1/task` and polls `GET /api/v1/task/{task_id}`
    until completion.
+  Optionally set `ALLOW_ORIGINS` (comma separated) to control which domains may
+  access the API when deployed.
 
 3. **Run the API**
 
