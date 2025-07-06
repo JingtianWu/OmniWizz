@@ -33,12 +33,9 @@ export default function VinylIcon({ playing, loading = false, onClick }) {
       // Loading finished → show 100 %, then gently reset
       setHint("play");
       setFade(false);
-      setProgress(100);
+      setProgress(0);
       // Clear any running timer
       if (intervalRef.current) clearInterval(intervalRef.current);
-      // After a short pause, drop back to 0 ready for the next job
-      const reset = setTimeout(() => setProgress(0), 800);
-      return () => clearTimeout(reset);
     }
 
     // Clean-up when the component unmounts or loading flag flips
