@@ -47,10 +47,10 @@ omniwizz/
    pip install -r requirements.txt
    ```
 
-   Set the `OPENAI_API_KEY` and `PIAPI_KEY` environment variables
-   before running the backend in production mode. You can export them in your
-   shell or place them in a `.env` file that your process reads. Set
-   `TEST_MODE=false` in the environment to enable real API calls. When disabled,
+  Set the `OPENAI_API_KEY` and `PIAPI_KEY` environment variables
+  before running the backend in production mode. The backend uses
+  `python-dotenv` (included in `requirements.txt`) to load variables from a
+  `.env` file if present. Set `TEST_MODE=false` in the environment to enable real API calls. When disabled,
    the backend submits lyrics and prompts to the PiAPI DiffRhythm service via
    `POST https://api.piapi.ai/api/v1/task` and polls `GET /api/v1/task/{task_id}`
    until completion.
