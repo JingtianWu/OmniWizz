@@ -9,6 +9,7 @@ def extract_prompt_and_lyrics(output, lang="en"):
     """Return (prompt, lyrics) parsed from raw model output."""
     if lang == "en":
         p_pats = [
+            r"\*\*Music(?:al)? Prompt:\*\*\s*(.*?)(?:\n{2,}|\*\*Lyrics)",
             r"\*\*Music(?:al)? Prompt\*\*[:：]?\s*(.*?)(?:\n{2,}|\*\*Lyrics)",
             r"Music(?:al)? Prompt[:：]?\s*(.*?)(?:\n{2,}|Lyrics)",
         ]
@@ -28,23 +29,27 @@ def extract_prompt_and_lyrics(output, lang="en"):
 
     prompt = ""
     lyrics = ""
+
+    # Try to extract the prompt
     for pat in p_pats:
         m = re.search(pat, output, re.IGNORECASE | re.DOTALL)
         if m:
-            prompt = m.group(1).strip()
+            prompt = re.sub(r'\*{1,3}', '', m.group(1)).strip()
             break
 
+    # Try to extract the lyrics
     for pat in l_pats:
         m = re.search(pat, output, re.IGNORECASE | re.DOTALL)
         if m:
             lyrics = m.group(1).strip()
             break
 
+    # Fallback: use the first line if prompt patterns failed
     if not prompt:
-        # Fallback to the first line if pattern failed
         lines = output.strip().splitlines()
         if lines:
             prompt = lines[0].split(":", 1)[-1].strip().lstrip("*- ")
+            prompt = re.sub(r'\*{1,3}', '', prompt).strip()
 
     return prompt, lyrics
 
