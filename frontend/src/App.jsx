@@ -62,7 +62,7 @@ export default function App() {
   const [playing, setPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [hoverDownload, setHoverDownload] = useState(false);
+  const [showTimeMenu, setShowTimeMenu] = useState(false);
 
   /* Pagination */
   const [groupIdx, setGroupIdx] = useState(0);
@@ -656,15 +656,29 @@ export default function App() {
                   }}
                 />
                 {duration > 0 && (
-                  <div
-                    className="vinyl-time-display"
-                    onMouseEnter={() => setHoverDownload(true)}
-                    onMouseLeave={() => setHoverDownload(false)}
-                    onClick={handleDownload}
-                  >
-                    {hoverDownload
-                      ? "Download"
-                      : `${Math.floor(currentTime / 60)}:${(Math.floor(currentTime % 60)).toString().padStart(2, '0')} / ${Math.floor(duration / 60)}:${(Math.floor(duration % 60)).toString().padStart(2, '0')}`}
+                  <div className="vinyl-time-container">
+                    <div className="vinyl-time-display">
+                      {`${Math.floor(currentTime / 60)}:${(Math.floor(currentTime % 60)).toString().padStart(2, '0')} / ${Math.floor(duration / 60)}:${(Math.floor(duration % 60)).toString().padStart(2, '0')}`}
+                    </div>
+                    <button
+                      className="vinyl-menu-button"
+                      onClick={() => setShowTimeMenu((v) => !v)}
+                    >
+                      &#8942;
+                    </button>
+                    {showTimeMenu && (
+                      <div className="vinyl-time-menu">
+                        <div
+                          className="vinyl-time-menu-item"
+                          onClick={() => {
+                            handleDownload();
+                            setShowTimeMenu(false);
+                          }}
+                        >
+                          Download
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

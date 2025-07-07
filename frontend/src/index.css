@@ -969,14 +969,21 @@ html { scroll-behavior: smooth; }
   z-index: 4;
 }
 
-/* Time display */
-.vinyl-time-display {
+/* Time + menu container */
+.vinyl-time-container {
   position: absolute;
   bottom: -30px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   z-index: 6;
+}
+
+/* Time display */
+.vinyl-time-display {
+  font-size: 0.85rem;
   color: rgba(255, 255, 255, 0.7);
   font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
   background: rgba(0, 0, 0, 0.5);
@@ -984,14 +991,52 @@ html { scroll-behavior: smooth; }
   border-radius: 16px;
   backdrop-filter: blur(10px);
   white-space: nowrap;
-  pointer-events: auto;
-  cursor: pointer;
-  transition: transform 0.2s ease, background 0.2s ease;
+  pointer-events: none;
+  user-select: none;
+  transition: background 0.2s ease;
 }
 
 .vinyl-time-display:hover {
-  transform: translateX(-50%) scale(1.05);
   background: rgba(0, 0, 0, 0.7);
+}
+
+.vinyl-menu-button {
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: background 0.2s ease;
+}
+
+.vinyl-menu-button:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.vinyl-time-menu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 4px 8px;
+  border-radius: 6px;
+  backdrop-filter: blur(10px);
+}
+
+.vinyl-time-menu-item {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+}
+
+.vinyl-time-menu-item:hover {
+  text-decoration: underline;
 }
 
 /* Hover effect for seek area */
