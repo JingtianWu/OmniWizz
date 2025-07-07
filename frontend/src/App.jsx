@@ -62,6 +62,7 @@ export default function App() {
   const [playing, setPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [hoverDownload, setHoverDownload] = useState(false);
 
   /* Pagination */
   const [groupIdx, setGroupIdx] = useState(0);
@@ -284,6 +285,16 @@ export default function App() {
     } finally {
       setRegenLoading(false);
     }
+  }
+
+  function handleDownload() {
+    if (!audioUrl) return;
+    const link = document.createElement('a');
+    link.href = audioUrl;
+    link.download = 'omniwizz_audio.wav';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   /* Memoized slices */
@@ -570,15 +581,6 @@ export default function App() {
             >
               {regenLoading ? "Regenerating..." : "Regenerate Music"}
             </button>
-            {audioUrl && !pendingMusic && (
-              <a
-                href={audioUrl}
-                download="omniwizz_audio.wav"
-                className="download-btn"
-              >
-                Download Music
-              </a>
-            )}
           </div>
         </div>
       <div className="app-right-container">
@@ -654,9 +656,15 @@ export default function App() {
                   }}
                 />
                 {duration > 0 && (
-                  <div className="vinyl-time-display">
-                    {Math.floor(currentTime / 60)}:{(Math.floor(currentTime % 60)).toString().padStart(2, '0')} / 
-                    {Math.floor(duration / 60)}:{(Math.floor(duration % 60)).toString().padStart(2, '0')}
+                  <div
+                    className="vinyl-time-display"
+                    onMouseEnter={() => setHoverDownload(true)}
+                    onMouseLeave={() => setHoverDownload(false)}
+                    onClick={handleDownload}
+                  >
+                    {hoverDownload
+                      ? "Download"
+                      : `${Math.floor(currentTime / 60)}:${(Math.floor(currentTime % 60)).toString().padStart(2, '0')} / ${Math.floor(duration / 60)}:${(Math.floor(duration % 60)).toString().padStart(2, '0')}`}
                   </div>
                 )}
               </div>
