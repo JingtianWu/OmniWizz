@@ -238,7 +238,13 @@ html { scroll-behavior: smooth; }
 .dot { width: 6px; height: 6px; border-radius: 50%; background-color: #00ffcc; opacity: 0.7; animation: pulse 1s infinite ease-in-out; }
 .dot-1 { animation-delay: 0.2s; }
 .dot-2 { animation-delay: 0.4s; }
-.paused { width: 8px; height: 8px; background-color: #aaa; opacity: 0.6; }
+.paused {
+  width: 8px;
+  height: 8px;
+  background-color: #ff5555;
+  border-radius: 50%;
+  opacity: 0.8;
+}
 
 /* Progress bar */
 .vinyl-progress {
