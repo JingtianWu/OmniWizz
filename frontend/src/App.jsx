@@ -564,14 +564,23 @@ export default function App() {
           </div>
 
           <button
-            className="regen-btn"
-            onClick={regenerateMusic}
-            disabled={regenDisabled}
-          >
-            {regenLoading ? "Regenerating..." : "Regenerate Music"}
-          </button>
+              className="regen-btn"
+              onClick={regenerateMusic}
+              disabled={regenDisabled}
+            >
+              {regenLoading ? "Regenerating..." : "Regenerate Music"}
+            </button>
+            {audioUrl && !pendingMusic && (
+              <a
+                href={audioUrl}
+                download="omniwizz_audio.wav"
+                className="download-btn"
+              >
+                Download Music
+              </a>
+            )}
+          </div>
         </div>
-      </div>
       <div className="app-right-container">
         <div className="board-frame">
           <div className="center-cluster">

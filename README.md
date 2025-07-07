@@ -12,6 +12,7 @@
 - **Image → Tags** for creativity prompts
 - **Image → Related Images** via SerpAPI (`SERPAPI_API_KEY` required)
 - REST endpoint `/generate` wraps all pipelines
+- Download generated music directly from the results screen
 - Toggle `TEST_MODE` (via environment variable or in `backend/config.py`) for offline demos.
   When enabled, the backend uses bundled mock data and avoids contacting the
   GPT‑4.1‑nano and DiffRhythm APIs, suitable for memory‑constrained deployments.

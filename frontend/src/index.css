@@ -814,6 +814,49 @@ html { scroll-behavior: smooth; }
   opacity: 0.7;
 }
 
+/* Download button */
+.download-btn {
+  background: linear-gradient(135deg, #00c9ff, #92fe9d);
+  background-size: 200% 100%;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+  box-shadow:
+    0 4px 16px rgba(0,0,0,0.2),
+    inset 0 1px 0 rgba(255,255,255,0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+  display: inline-block;
+  align-self: center;
+  margin-top: 0.5rem;
+}
+
+.download-btn:hover {
+  transform: translateY(-2px);
+  background-position: 100% 0;
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+.download-btn:active {
+  transform: translateY(0);
+  box-shadow:
+    0 2px 8px rgba(0,0,0,0.2),
+    inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+.download-btn:disabled {
+  background: linear-gradient(135deg, #666, #888);
+  cursor: not-allowed;
+  transform: none;
+  opacity: 0.7;
+}
+
 /* Generate button */
 .prompt-box .generate-btn {
   background: linear-gradient(135deg, #667eea, #764ba2, #f093fb);
