@@ -74,9 +74,31 @@ export default function App() {
   const [runFolder, setRunFolder] = useState("");
   const [promptText, setPromptText] = useState("");
   const [lyricsText, setLyricsText] = useState("");
+  const [doneStagePreview, setDoneStagePreview] = useState("");
   const [regenLoading, setRegenLoading] = useState(false);
   const [pendingPrompt, setPendingPrompt] = useState(false);
   const [pendingLyrics, setPendingLyrics] = useState(false);
+
+  const captureDoneStagePreview = () => {
+    setTimeout(() => {
+      const doneContainer = document.querySelector('.done-container');
+      if (!doneContainer) return;
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = 400;
+      canvas.height = 300;
+      const ctx = canvas.getContext('2d');
+      
+      const gradient = ctx.createLinearGradient(0, 0, 400, 300);
+      gradient.addColorStop(0, '#161832');
+      gradient.addColorStop(0.45, '#571c83');
+      gradient.addColorStop(1, '#161832');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 400, 300);
+      
+      setDoneStagePreview(canvas.toDataURL('image/png'));
+    }, 100);
+  };
 
   const captureAndGenerate = () => {
     const art = document.querySelector(".artboard");
@@ -241,21 +263,42 @@ export default function App() {
     } finally {
       clearInterval(intervalId);
       setStage("done");
+      captureDoneStagePreview();
     }
   }
 
   const returnToEditor = () => {
+    // Preserve audio state
+    const wasPlaying = playing;
+    const currentAudioTime = currentTime;
+    
     setStage("idle");
     setTimeout(() => {
       editorRef.current?.dismissHint?.();
     }, 0);
+    
+    // Store audio state for restoration
+    if (audioRef.current && wasPlaying) {
+      audioRef.current.currentTime = currentAudioTime;
+      audioRef.current.pause();
+      setPlaying(false);
+    }
   };
 
   useEffect(() => {
-    if (stage === "idle" && canvasState && editorRef.current?.loadSnapshot) {
-      editorRef.current.loadSnapshot(canvasState);
+    if (stage === "done" && audioRef.current && audioUrl) {
+      // Restore audio element state
+      audioRef.current.load();
     }
-  }, [stage]);
+  }, [stage, audioUrl]);
+
+  useEffect(() => {
+    if (stage === "idle" && canvasState) {
+      requestAnimationFrame(() => {
+        editorRef.current?.loadSnapshot?.(canvasState);
+      });
+    }
+  }, [stage, canvasState]);
 
   async function regenerateMusic() {
     if (!doMusic) {
@@ -336,6 +379,27 @@ export default function App() {
   }, [imagePositions, tagPositions]);
 
   useEffect(() => {
+    if (stage === "done") {
+      // Re-trigger positioning when returning to done stage
+      setTimeout(() => {
+        document.querySelectorAll('.cloud-img').forEach((img, i) => {
+          if (imagePositions[i]) {
+            img.style.setProperty('--x', imagePositions[i].x);
+            img.style.setProperty('--y', imagePositions[i].y);
+            img.style.setProperty('--rotation', `${imagePositions[i].rotation}deg`);
+          }
+        });
+        document.querySelectorAll('.cloud-tag').forEach((tag, i) => {
+          if (tagPositions[i]) {
+            tag.style.setProperty('--x', tagPositions[i].x);
+            tag.style.setProperty('--y', tagPositions[i].y);
+          }
+        });
+      }, 100);
+    }
+  }, [stage, imagePositions, tagPositions]);
+
+  useEffect(() => {
     if (!pendingMusic || !audioUrl) return;
     const id = setInterval(async () => {
       try {
@@ -406,6 +470,63 @@ export default function App() {
   if (stage === "idle") {
     return (
       <div className="app-center-container">
+        {canvasUrl && (
+          <div 
+            className="canvas-frame back-button" 
+            onClick={() => {
+              if (editorRef.current?.getSnapshot) {
+                setCanvasState(editorRef.current.getSnapshot());
+              }
+              setStage("done");
+            }}
+            style={{
+              position: "absolute",
+              top: "1rem",
+              right: "1rem",
+              width: "280px",
+              height: "200px",
+              zIndex: 100
+            }}
+          >
+            <div style={{
+              width: "100%",
+              height: "100%",
+              background: "linear-gradient(135deg, #161832 0%, #571c83 45%, #161832 100%)",
+              borderRadius: "8px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              position: "relative",
+              overflow: "hidden"
+            }}>
+              <div className="board-frame" style={{
+                width: "240px",
+                height: "160px",
+                padding: "1rem",
+                pointerEvents: "none"
+              }}>
+                <div className="center-cluster" style={{
+                  width: "60px",
+                  height: "60px"
+                }}>
+                  <div className="vinyl-control-wrapper" style={{
+                    width: "60px",
+                    height: "60px"
+                  }}>
+                    <div style={{ transform: "scale(0.6)" }}>
+                      <VinylIcon
+                        playing={false}
+                        loading={false}
+                        onClick={null}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="canvas-overlay">Back to results</div>
+          </div>
+        )}
         <div style={{ display: "flex", gap: "2rem", alignItems: "flex-start" }}>
           <EditorCanvas
             ref={editorRef}
@@ -803,4 +924,3 @@ export default function App() {
   </div>
   );
 }
-
