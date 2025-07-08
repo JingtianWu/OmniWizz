@@ -567,8 +567,8 @@ html { scroll-behavior: smooth; }
   font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
   font-size: 0.95rem;
   line-height: 1.4;
-  min-height: 48px;
-  max-height: 48px;
+  min-height: 52px;
+  max-height: 52px;
   overflow-y: hidden;
   overflow-x: auto;
   white-space: nowrap;
@@ -1013,38 +1013,58 @@ html { scroll-behavior: smooth; }
 /* Menu button for vinyl options */
 .vinyl-menu-btn {
   position: absolute;
-  top: 6px;
-  right: 6px;
-  background: none;
-  border: none;
+  bottom: -30px;
+  right: 30px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
   color: #fff;
   cursor: pointer;
   z-index: 7;
+  width: 15px;
+  padding: 0.24rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+}
+
+.vinyl-menu-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: scale(1.05);
 }
 
 /* Options dropdown */
 .vinyl-menu {
   position: absolute;
-  top: 36px;
-  right: 6px;
+  bottom: 4px;
+  right: -15px;
   background: rgba(30, 30, 40, 0.95);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 6px;
-  padding: 6px 0;
-  min-width: 120px;
+  padding: 4px 0;
+  min-width: 100px;
   z-index: 50;
+  backdrop-filter: blur(10px);
 }
 
 .vinyl-menu-item {
   display: block;
   width: 100%;
-  padding: 6px 12px;
+  padding: 4px 8px;
   text-align: left;
   color: #ddd;
   background: transparent;
   border: none;
   cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
 }
 .vinyl-menu-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
 }
