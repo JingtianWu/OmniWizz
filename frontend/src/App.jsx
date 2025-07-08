@@ -1,6 +1,7 @@
 import React, { useState, useRef, useMemo, useEffect } from "react";
 import EditorCanvas from "./components/EditorCanvas";
 import VinylIcon from "./components/VinylIcon";
+import { MoreVertical } from "lucide-react";
 import "./index.css";
 
 const BACKEND_URL =
@@ -62,6 +63,7 @@ export default function App() {
   const [playing, setPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [showAudioMenu, setShowAudioMenu] = useState(false);
 
   /* Pagination */
   const [groupIdx, setGroupIdx] = useState(0);
@@ -368,6 +370,22 @@ export default function App() {
   const lyricsDisabled  = !doMusic || pendingLyrics;
   const regenDisabled   = !doMusic || regenLoading || pendingMusic;
 
+  const handleDownloadAudio = async () => {
+    if (!audioUrl) return;
+    try {
+      const resp = await fetch(audioUrl);
+      const blob = await resp.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "omniwizz_audio";
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Download failed", err);
+    }
+  };
+
   /* RENDER */
   if (stage === "idle") {
     return (
@@ -644,9 +662,29 @@ export default function App() {
                     playing ? audioRef.current.pause() : audioRef.current.play();
                   }}
                 />
+                <button
+                  className="vinyl-menu-btn"
+                  onClick={() => setShowAudioMenu(prev => !prev)}
+                >
+                  <MoreVertical size={18} />
+                </button>
+                {showAudioMenu && (
+                  <div
+                    className="vinyl-menu"
+                    tabIndex={-1}
+                    onBlur={() => setShowAudioMenu(false)}
+                  >
+                    <button
+                      className="vinyl-menu-item"
+                      onClick={() => { handleDownloadAudio(); setShowAudioMenu(false); }}
+                    >
+                      Download Audio
+                    </button>
+                  </div>
+                )}
                 {duration > 0 && (
                   <div className="vinyl-time-display">
-                    {Math.floor(currentTime / 60)}:{(Math.floor(currentTime % 60)).toString().padStart(2, '0')} / 
+                    {Math.floor(currentTime / 60)}:{(Math.floor(currentTime % 60)).toString().padStart(2, '0')} /
                     {Math.floor(duration / 60)}:{(Math.floor(duration % 60)).toString().padStart(2, '0')}
                   </div>
                 )}

@@ -1009,3 +1009,42 @@ html { scroll-behavior: smooth; }
   transform-box: fill-box;
   transform-origin: center;
 }
+
+/* Menu button for vinyl options */
+.vinyl-menu-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  z-index: 7;
+}
+
+/* Options dropdown */
+.vinyl-menu {
+  position: absolute;
+  top: 36px;
+  right: 6px;
+  background: rgba(30, 30, 40, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 6px 0;
+  min-width: 120px;
+  z-index: 50;
+}
+
+.vinyl-menu-item {
+  display: block;
+  width: 100%;
+  padding: 6px 12px;
+  text-align: left;
+  color: #ddd;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+.vinyl-menu-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
