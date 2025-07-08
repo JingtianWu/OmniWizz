@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 /* canvas sizes */
-const W = 896, H = 504, AUDIO_H = 120, MAX_HISTORY = 50;
+const W = 896, H = 504, AUDIO_H = 100, MAX_HISTORY = 50;
 
 /* font size limits */
 const MIN_FONT_SIZE = 1;
