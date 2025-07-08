@@ -320,6 +320,22 @@ export default function App() {
   }, [visibleImages]);
 
   useEffect(() => {
+    document.querySelectorAll('.cloud-img').forEach((img, i) => {
+      if (imagePositions[i]) {
+        img.style.setProperty('--x', imagePositions[i].x);
+        img.style.setProperty('--y', imagePositions[i].y);
+        img.style.setProperty('--rotation', `${imagePositions[i].rotation}deg`);
+      }
+    });
+    document.querySelectorAll('.cloud-tag').forEach((tag, i) => {
+      if (tagPositions[i]) {
+        tag.style.setProperty('--x', tagPositions[i].x);
+        tag.style.setProperty('--y', tagPositions[i].y);
+      }
+    });
+  }, [imagePositions, tagPositions]);
+
+  useEffect(() => {
     if (!pendingMusic || !audioUrl) return;
     const id = setInterval(async () => {
       try {
@@ -627,8 +643,7 @@ export default function App() {
                     strokeWidth="2"
                     style={{
                       transition: 'cx 0.1s linear, cy 0.1s linear',
-                      filter: 'drop-shadow(0 0 6px rgba(0,255,209,0.6))',
-                      pointerEvents: 'none'
+                      filter: 'drop-shadow(0 0 6px rgba(0,255,209,0.6))'
                     }}
                   />
                   <defs>
@@ -713,13 +728,9 @@ export default function App() {
                   alt=""
                   className="cloud-img"
                   draggable={false}
-                  style={{
-                    left: `${x}%`,
-                    top: `${y}%`,
-                    "--r": `${rotation}deg`,
-                    userSelect: "none",
-                    WebkitUserDrag: "none"
-                  }}
+                  data-x={x}
+                  data-y={y}
+                  data-rotation={rotation}
                 />
               ))}
             </div>
@@ -732,11 +743,8 @@ export default function App() {
                   key={i}
                   className="cloud-tag"
                   draggable={false}
-                  style={{
-                    left: `${x}%`, 
-                    top: `${y}%`,
-                    userSelect: "none"
-                  }}
+                  data-x={x}
+                  data-y={y}
                 >
                   {visibleTags[i]}
                 </span>

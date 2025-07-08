@@ -198,6 +198,23 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
                  document.removeEventListener("mouseup",   up); };
   }, []);
 
+  useEffect(() => {
+    boxes.forEach(b => {
+      const el = document.getElementById(`tb-${b.id}`);
+      if (el) {
+        el.style.setProperty('--font-size', b.fs);
+        el.style.setProperty('--color', b.color);
+        if (b.width != null) el.style.setProperty('--width', `${b.width}px`);
+        if (b.height != null) el.style.setProperty('--height', `${b.height}px`);
+        const parent = el.parentElement;
+        if (parent) {
+          parent.style.setProperty('--x', b.x);
+          parent.style.setProperty('--y', b.y);
+        }
+      }
+    });
+  }, [boxes]);
+
   /* -------------- Drop image on artboard -------------- */
   const onBgDrop = e => {
     e.preventDefault();
@@ -627,10 +644,7 @@ const handleFontSizeChange = (boxId, newSize) => {
             ref={inkRef}
             width={W}
             height={H}
-            style={{
-              position: 'absolute',
-              cursor: mode === "pen" ? "crosshair" : mode === "erase" ? "cell" : mode === "text" ? "crosshair" : "default"
-            }}
+            className={`ink-canvas cursor-${mode}`}
             onMouseDown={startStroke}
             onMouseMove={drawMove}
             onMouseUp={endStroke}
@@ -640,7 +654,7 @@ const handleFontSizeChange = (boxId, newSize) => {
           />
           
           {!bgSrc && showHint && (
-            <div className="drop-zone" style={{ pointerEvents: 'none' }}>
+            <div className="drop-zone">
               <div className="drop-text">
                 Draw or do anything you like!
                 <br />
@@ -655,12 +669,9 @@ const handleFontSizeChange = (boxId, newSize) => {
             return (
               <div
                 key={b.id}
-                style={{
-                  position: "absolute",
-                  left: b.x,
-                  top: b.y,
-                  pointerEvents: mode === "pen" || mode === "erase" ? "none" : "auto"
-                }}
+                className={`textbox-container ${mode === "pen" || mode === "erase" ? "no-pointer" : ""}`}
+                data-x={b.x}
+                data-y={b.y}
                 onMouseDown={(ev) => {
                   if (b.editing || mode !== "move") return;
                   const pr = contRef.current.getBoundingClientRect();
@@ -772,23 +783,13 @@ const handleFontSizeChange = (boxId, newSize) => {
 
                 <div
                   id={`tb-${b.id}`}
-                  className={`textbox ${sel ? "active" : ""} ${b.editing ? "editing" : ""}`}
+                  className={`textbox ${sel ? "active" : ""} ${b.editing ? "editing" : ""} ${mode === "pen" || mode === "erase" ? "no-pointer" : ""}`}
                   contentEditable={b.editing}
                   suppressContentEditableWarning
-                  style={{
-                    fontSize: b.fs,
-                    color: b.color,
-                    width: b.width != null ? `${b.width}px` : "auto",
-                    height: b.height != null ? `${b.height}px` : "auto",
-                    boxSizing: "border-box",
-                    overflow: "hidden",
-                    whiteSpace: "pre-wrap",
-                    wordWrap: "break-word",
-                    overflowWrap: "break-word",
-                    cursor: b.editing ? 'text' : 'pointer',
-                    userSelect: b.editing ? 'text' : 'none',
-                    pointerEvents: mode === "pen" || mode === "erase" ? "none" : "auto"
-                  }}
+                  data-font-size={b.fs}
+                  data-color={b.color}
+                  data-width={b.width}
+                  data-height={b.height}
                   onClick={(e) => {
                     e.stopPropagation();
                     if (mode === "move" && !sel) setSel(b.id);

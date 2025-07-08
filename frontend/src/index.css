@@ -308,18 +308,22 @@ html { scroll-behavior: smooth; }
 
 .cloud-img {
   position: absolute;
+  left: calc(var(--x, 50) * 1%);
+  top: calc(var(--y, 50) * 1%);
   width: 120px; height: 120px;
   object-fit: contain;
   border-radius: 20px;
   box-shadow: 0 12px 32px rgba(0,0,0,0.4);
   animation: float 7s ease-in-out infinite;
-  transform: translate(-50%,-50%) rotate(var(--r));
+  transform: translate(-50%,-50%) rotate(var(--rotation, 0deg));
   border: 2px solid rgba(255,255,255,0.2);
   transition: all 0.4s cubic-bezier(0.4,0,0.2,1);
   cursor: pointer;
   z-index: 1;
   background: rgba(255,255,255,0.1);
   backdrop-filter: blur(5px);
+  user-select: none;
+  -webkit-user-drag: none;
 }
 .cloud-img:hover {
   transform: translate(-50%,-50%) rotate(0deg) scale(2.5);
@@ -332,14 +336,16 @@ html { scroll-behavior: smooth; }
   width: 240px; height: 240px;
 }
 @keyframes float {
-  0%,100% { transform: translate(-50%,-50%) translateY(-8px) rotate(var(--r)); }
-  50%    { transform: translate(-50%,-50%) translateY(12px) rotate(var(--r)); }
+  0%,100% { transform: translate(-50%,-50%) translateY(-8px) rotate(var(--rotation, 0deg)); }
+  50%    { transform: translate(-50%,-50%) translateY(12px) rotate(var(--rotation, 0deg)); }
 }
 
 /* FLOATING TAG CLOUD */
 .tag-cloud { position: absolute; inset: 0; pointer-events: none; }
 .cloud-tag {
   position: absolute;
+  left: calc(var(--x, 50) * 1%);
+  top: calc(var(--y, 50) * 1%);
   transform: translate(-50%,-50%);
   background: linear-gradient(135deg, rgba(255,255,255,.95), rgba(255,255,255,.85));
   color: #222;
@@ -1067,4 +1073,30 @@ html { scroll-behavior: smooth; }
 .vinyl-menu-item:hover {
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
+}
+
+/* Canvas cursors */
+.ink-canvas {
+  position: absolute;
+}
+.cursor-pen { cursor: crosshair; }
+.cursor-erase { cursor: cell; }
+.cursor-text { cursor: crosshair; }
+.cursor-move { cursor: default; }
+
+/* Pointer events */
+.no-pointer { pointer-events: none; }
+
+/* Dynamic positioning */
+.textbox-container {
+  position: absolute;
+  left: calc(var(--x, 0) * 1px);
+  top: calc(var(--y, 0) * 1px);
+}
+
+.textbox[data-font-size] {
+  font-size: calc(var(--font-size, 24) * 1px);
+  color: var(--color);
+  width: var(--width, auto);
+  height: var(--height, auto);
 }
