@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.css": "/OmniWizz/static/css/main.e0c1006a.css",
-    "main.js": "/OmniWizz/static/js/main.b5669ea0.js",
+    "main.css": "/OmniWizz/static/css/main.cafc3eef.css",
+    "main.js": "/OmniWizz/static/js/main.1fa570e6.js",
     "index.html": "/OmniWizz/index.html",
-    "main.e0c1006a.css.map": "/OmniWizz/static/css/main.e0c1006a.css.map",
-    "main.b5669ea0.js.map": "/OmniWizz/static/js/main.b5669ea0.js.map"
+    "main.cafc3eef.css.map": "/OmniWizz/static/css/main.cafc3eef.css.map",
+    "main.1fa570e6.js.map": "/OmniWizz/static/js/main.1fa570e6.js.map"
   },
   "entrypoints": [
-    "static/css/main.e0c1006a.css",
-    "static/js/main.b5669ea0.js"
+    "static/css/main.cafc3eef.css",
+    "static/js/main.1fa570e6.js"
   ]
 }
