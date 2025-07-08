@@ -445,133 +445,111 @@ export default function App() {
   if (stage === "idle") {
     return (
       <div className="app-center-container">
-
-        {canvasUrl && (
-          <div
-            className="canvas-frame back-button"
-            onClick={() => {
-              const art = document.querySelector(".artboard");
-              if (art) {
-                const [bg, ink] = art.querySelectorAll("canvas");
-                if (bg && ink) {
-                  const w = bg.width, h = bg.height;
-                  const c = document.createElement("canvas");
-                  c.width = w;
-                  c.height = h;
-                  const ctx = c.getContext("2d");
-
-                  // draw canvases
-                  ctx.drawImage(bg, 0, 0);
-                  ctx.drawImage(ink, 0, 0);
-
-                  // draw text boxes so they’re preserved
-                  art.querySelectorAll(".textbox").forEach(tb => {
-                    const style = window.getComputedStyle(tb);
-                    const fontSize   = style.fontSize;
-                    const fontFamily = style.fontFamily;
-                    const color      = style.color;
-
-                    const artRect = art.getBoundingClientRect();
-                    const tbRect  = tb.getBoundingClientRect();
-                    const x = tbRect.left - artRect.left;
-                    const y = tbRect.top  - artRect.top + parseInt(fontSize, 10);
-
-                    ctx.font = `${fontSize} ${fontFamily}`;
-                    ctx.fillStyle = color;
-                    ctx.textBaseline = "top";
-                    ctx.fillText(tb.innerText, x, y);
-                  });
-
-                  setCanvasUrl(c.toDataURL("image/png"));
-                }
-              }
-
-              if (editorRef.current?.getSnapshot) {
-                setCanvasState(editorRef.current.getSnapshot());
-              }
-              setStage("done");
-            }}
-            style={{
-              position: "absolute",
-              top: "1.5rem",
-              right: "1.5rem",
-              width: "340px",
-              height: "240px",
-              zIndex: 100
-            }}
-          >
-            <div
-              style={{
-                width: "100%",
-                height: "100%",
-                background:
-                  "linear-gradient(135deg, #161832 0%, #571c83 45%, #161832 100%)",
-                borderRadius: "8px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                position: "relative",
-                overflow: "hidden"
-              }}
-            >
+        <div style={{ display: "flex", gap: "2rem", alignItems: "flex-start" }}>
+          <div className="done-left">
+            {canvasUrl && (
               <div
-                className="board-frame"
-                style={{ width: 300, height: 200, padding: "1rem", pointerEvents: "none" }}
+                className="canvas-frame back-button"
+                onClick={() => {
+                  const art = document.querySelector(".artboard");
+                  if (art) {
+                    const [bg, ink] = art.querySelectorAll("canvas");
+                    if (bg && ink) {
+                      const w = bg.width, h = bg.height;
+                      const c = document.createElement("canvas");
+                      c.width = w;
+                      c.height = h;
+                      const ctx = c.getContext("2d");
+                      ctx.drawImage(bg, 0, 0);
+                      ctx.drawImage(ink, 0, 0);
+                      art.querySelectorAll(".textbox").forEach(tb => {
+                        const style = window.getComputedStyle(tb);
+                        const fontSize = style.fontSize;
+                        const fontFamily = style.fontFamily;
+                        const color = style.color;
+                        const artRect = art.getBoundingClientRect();
+                        const tbRect = tb.getBoundingClientRect();
+                        const x = tbRect.left - artRect.left;
+                        const y = tbRect.top - artRect.top + parseInt(fontSize, 10);
+                        ctx.font = `${fontSize} ${fontFamily}`;
+                        ctx.fillStyle = color;
+                        ctx.textBaseline = "top";
+                        ctx.fillText(tb.innerText, x, y);
+                      });
+                      setCanvasUrl(c.toDataURL("image/png"));
+                    }
+                  }
+                  if (editorRef.current?.getSnapshot) {
+                    setCanvasState(editorRef.current.getSnapshot());
+                  }
+                  setStage("done");
+                }}
+                style={{
+                  position: "absolute",
+                  top: "1.5rem",
+                  right: "1.5rem",
+                  width: "340px",
+                  height: "240px",
+                  zIndex: 100
+                }}
               >
-                <div className="center-cluster" style={{ width: 60, height: 60 }}>
-                  <div className="vinyl-control-wrapper" style={{ width: 60, height: 60 }}>
-                    <div style={{ transform: "scale(0.6)" }}>
-                      <VinylIcon playing={false} loading={false} onClick={null} />
+                <div
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    background:
+                      "linear-gradient(135deg, #161832 0%, #571c83 45%, #161832 100%)",
+                    borderRadius: "8px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    position: "relative",
+                    overflow: "hidden"
+                  }}
+                >
+                  <div
+                    className="board-frame"
+                    style={{ width: 300, height: 200, padding: "1rem", pointerEvents: "none" }}
+                  >
+                    <div className="center-cluster" style={{ width: 60, height: 60 }}>
+                      <div className="vinyl-control-wrapper" style={{ width: 60, height: 60 }}>
+                        <div style={{ transform: "scale(0.6)" }}>
+                          <VinylIcon playing={false} loading={false} onClick={null} />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
+                <div className="canvas-overlay">Back to results</div>
               </div>
-            </div>
-            <div className="canvas-overlay">Back to results</div>
-          </div>
-        )}
+            )}
 
-        <div style={{ display: "flex", gap: "2rem", alignItems: "flex-start" }}>
+            <div className="options-box">
+              <h3 style={{ fontSize: "1.1rem", fontWeight: 600 }}>Options</h3>
+              <div className="options-divider" />
+              <label className="option-toggle">
+                <input type="checkbox" checked={doTags} onChange={onTagsToggle} />
+                <span>Tags</span>
+              </label>
+              <label className="option-toggle">
+                <input type="checkbox" checked={doMusic} onChange={onMusicToggle} />
+                <span>Music</span>
+              </label>
+              <label className="option-toggle">
+                <input type="checkbox" checked={doImages} onChange={onImagesToggle} />
+                <span>Images</span>
+              </label>
+              <button onClick={captureAndGenerate} className="generate-btn">
+                Generate
+              </button>
+            </div>
+          </div>
           <EditorCanvas
             ref={editorRef}
             onSubmit={handleFile}
             language={language}
             setLanguage={setLanguage}
           />
-          <div style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "1.5rem",
-            background: "rgba(20, 20, 30, 0.9)",
-            backdropFilter: "blur(20px)",
-            border: "1px solid rgba(255,255,255,0.15)",
-            borderRadius: "16px",
-            padding: "24px",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
-            minWidth: "200px",
-            alignSelf: "flex-end",
-          }}>
-            <h3 style={{ fontSize: "1.1rem", fontWeight: 600 }}>Options</h3>
-            <div className="options-divider" />
-            <label className="option-toggle">
-              <input type="checkbox" checked={doTags}   onChange={onTagsToggle}   />
-              <span>Tags</span>
-            </label>
-            <label className="option-toggle">
-              <input type="checkbox" checked={doMusic}  onChange={onMusicToggle}  />
-              <span>Music</span>
-            </label>
-            <label className="option-toggle">
-              <input type="checkbox" checked={doImages} onChange={onImagesToggle} />
-              <span>Images</span>
-            </label>
-            <button
-              onClick={captureAndGenerate}
-              className="generate-btn"
-            >
-              Generate
-            </button>
-          </div>
         </div>
       </div>
     );
