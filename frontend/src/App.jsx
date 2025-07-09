@@ -491,8 +491,8 @@ export default function App() {
             }}
             style={{
               position: "absolute",
-              top: "1.5rem",
-              right: "1.5rem",
+              top: "2rem",
+              right: "2rem",
               width: "340px",
               height: "240px",
               zIndex: 100
