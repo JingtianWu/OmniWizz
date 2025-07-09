@@ -460,11 +460,9 @@ export default function App() {
                   c.height = h;
                   const ctx = c.getContext("2d");
 
-                  // draw canvases
                   ctx.drawImage(bg, 0, 0);
                   ctx.drawImage(ink, 0, 0);
 
-                  // draw text boxes so they’re preserved
                   art.querySelectorAll(".textbox").forEach(tb => {
                     const style = window.getComputedStyle(tb);
                     const fontSize   = style.fontSize;
@@ -518,8 +516,48 @@ export default function App() {
                 className="board-frame"
                 style={{ width: 300, height: 200, padding: "1rem", pointerEvents: "none" }}
               >
-                <div className="center-cluster" style={{ width: 60, height: 60 }}>
-                  <div className="vinyl-control-wrapper" style={{ width: 60, height: 60 }}>
+                <div className="center-cluster" style={{ width: 120, height: 120 }}>
+                  <div className="vinyl-control-wrapper" style={{ width: 120, height: 120 }}>
+                    <svg className="vinyl-progress-ring" viewBox="0 0 200 200">
+                      <circle
+                        cx="100"
+                        cy="100"
+                        r="90"
+                        fill="none"
+                        stroke="rgba(255,255,255,0.1)"
+                        strokeWidth="4"
+                      />
+                      <circle
+                        cx="100"
+                        cy="100"
+                        r="90"
+                        fill="none"
+                        stroke="url(#progressGradientMini)"
+                        strokeWidth="4"
+                        strokeDasharray={`${2 * Math.PI * 90}`}
+                        strokeDashoffset={`${2 * Math.PI * 90 * (1 - 0)}`}
+                        transform="rotate(-90 100 100)"
+                        style={{ transition: 'stroke-dashoffset 0.1s linear' }}
+                      />
+                      <circle
+                        cx="100"
+                        cy="10"
+                        r="6"
+                        fill="#fff"
+                        stroke="url(#progressGradientMini)"
+                        strokeWidth="2"
+                        style={{
+                          filter: 'drop-shadow(0 0 6px rgba(0,255,209,0.6))'
+                        }}
+                      />
+                      <defs>
+                        <linearGradient id="progressGradientMini" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%"  style={{ stopColor: '#00ffd1', stopOpacity: 1 }} />
+                          <stop offset="50%" style={{ stopColor: '#11cfff', stopOpacity: 1 }} />
+                          <stop offset="100%" style={{ stopColor: '#c44cff', stopOpacity: 1 }} />
+                        </linearGradient>
+                      </defs>
+                    </svg>
                     <div style={{ transform: "scale(0.6)" }}>
                       <VinylIcon playing={false} loading={false} onClick={null} />
                     </div>
