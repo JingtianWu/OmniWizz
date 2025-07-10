@@ -1104,7 +1104,8 @@ html { scroll-behavior: smooth; }
 .lyrics-textarea {
   min-height: 150px;
   max-height: 150px;
-  white-space: pre-wrap;
+  white-space: pre;
   overflow-y: auto;
+  overflow-x: auto;
   resize: vertical;
 }

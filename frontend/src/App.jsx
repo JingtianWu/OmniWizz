@@ -753,12 +753,14 @@ export default function App() {
                     playing ? audioRef.current.pause() : audioRef.current.play();
                   }}
                 />
-                <button
-                  className="vinyl-menu-btn"
-                  onClick={() => setShowAudioMenu(prev => !prev)}
-                >
-                  <MoreVertical size={18} />
-                </button>
+                {duration > 0 && !pendingMusic && (
+                  <button
+                    className="vinyl-menu-btn"
+                    onClick={() => setShowAudioMenu(prev => !prev)}
+                  >
+                    <MoreVertical size={18} />
+                  </button>
+                )}
                 {showAudioMenu && (
                   <div
                     className="vinyl-menu"
@@ -773,7 +775,7 @@ export default function App() {
                     </button>
                   </div>
                 )}
-                {duration > 0 && (
+                {duration > 0 && !pendingMusic && (
                   <div className="vinyl-time-display">
                     {Math.floor(currentTime / 60)}:{(Math.floor(currentTime % 60)).toString().padStart(2, '0')} /
                     {Math.floor(duration / 60)}:{(Math.floor(duration % 60)).toString().padStart(2, '0')}

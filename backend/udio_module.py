@@ -14,6 +14,7 @@ def extract_prompt_and_lyrics(output, lang="en"):
             r"Music(?:al)? Prompt[:：]?\s*(.*?)(?:\n{2,}|Lyrics)",
         ]
         l_pats = [
+            r"\*\*Lyrics[:：]\*\*\s*([\s\S]+)",
             r"\*\*Lyrics\*\*[:：]?\s*([\s\S]+)",
             r"Lyrics[:：]?\s*([\s\S]+)",
         ]
@@ -23,6 +24,7 @@ def extract_prompt_and_lyrics(output, lang="en"):
             r"音乐风格[:：]?\s*(.*?)(?:\n{2,}|歌词)",
         ]
         l_pats = [
+            r"\*\*歌词[:：]\*\*\s*([\s\S]+)",
             r"\*\*歌词\*\*[:：]?\s*([\s\S]+)",
             r"歌词[:：]?\s*([\s\S]+)",
         ]
