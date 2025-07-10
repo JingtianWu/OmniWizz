@@ -59,16 +59,16 @@ class LLMProcessor:
                      "to match the pacing and emotion of the scene.\n\n"
                      "**Music Prompt:**\nEpic fantasy orchestra, slow build-up, thunderstorm ambience, Celtic flute melody\n\n"
                      "**Lyrics:**\n"
-                     "[00:13.20]Your shadow dances on the dashboard shrine\n"
-                     "[00:16.85]Neon ghosts in gasoline rain\n"
-                     "[00:20.40]I hear your laughter down the midnight train\n\n"
+                     "Your shadow dances on the dashboard shrine\n"
+                     "Neon ghosts in gasoline rain\n"
+                     "I hear your laughter down the midnight train\n\n"
                      "Now, based on the following image, generate a new musical prompt and a complete set of timestamped lyrics in English only. "
                      "The timestamps must be tailored to the pacing, rhythm, and mood inspired by the image. "
                      "The output must include at least 12 lines of lyrics. The entire output must be written in English only. "
                      "Follow the same format as the example."},
                     {"type": "image", "image": self.image_path},
                     {"type": "text", "text":
-                     "Start with the **Music Prompt**, then write **Lyrics** with appropriately spaced timestamps in the format [MM:SS.xx]. "
+                     "Start with the **Music Prompt**, then write **Lyrics**. "
                      "Ensure the lyrics are at least 12 lines long, written only in English, and maintain a consistent emotional tone."}
                 ],
             }]
@@ -80,14 +80,14 @@ class LLMProcessor:
                      "以下是如何根据图像生成音乐风格和歌词的示例。歌词需要包含时间戳，格式为 [MM:SS.xx]，时间戳应与画面情绪与节奏相符。\n\n"
                      "**音乐风格：**\n伤感氛围电子，慢节奏，钢琴伴奏，雨声背景\n\n"
                      "**歌词：**\n"
-                     "[00:13.20]雨滴敲打窗前的寂静\n"
-                     "[00:16.85]街灯映出你的背影\n"
-                     "[00:20.40]我在梦中等你的回应\n\n"
+                     "雨滴敲打窗前的寂静\n"
+                     "街灯映出你的背影\n"
+                     "我在梦中等你的回应\n\n"
                      "现在请根据下图生成一个新的音乐风格描述和完整的时间戳歌词。"
                      "歌词必须贴合图像传达的情绪与节奏，并且不少于12行。格式需与上例一致。"},
                     {"type": "image", "image": self.image_path},
                     {"type": "text", "text":
-                     "请以 **音乐风格：** 开始，然后生成带有时间戳的 **歌词：**，时间戳格式为 [MM:SS.xx]。歌词不少于12行。"}
+                     "请以 **音乐风格：** 开始，然后生成 **歌词：**。歌词不少于12行。"}
                 ],
             }]
         return messages

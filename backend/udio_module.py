@@ -110,20 +110,31 @@ def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_
         status = stat_data.get("data", {}).get("status") or stat_data.get("status")
         print("📄 Udio poll status data:", stat_data)
         if status == "completed":
+            # NEW: Check audio inside songs[]
+            songs = stat_data.get("data", {}).get("output", {}).get("songs", [])
+            for song in songs:
+                audio_url = song.get("song_path")
+                if audio_url:
+                    wav_res = requests.get(audio_url, timeout=120)
+                    wav_res.raise_for_status()
+                    audio_path = out_dir / "audio.wav"
+                    audio_path.write_bytes(wav_res.content)
+                    return str(audio_path)
+
+            # FALLBACK: Previous formats
             audio_url = (
                 stat_data.get("data", {}).get("output", {}).get("audio_url")
-                or stat_data.get("data", {}).get("outputs", [{}])[0].get("url")         # multi-output schema
-                or stat_data.get("data", {}).get("works",   [{}])[0]
-                    .get("resource", {}).get("resource")                             # legacy schema
-                or stat_data.get("output", {}).get("audio_url")                         # top-level fallback
+                or stat_data.get("data", {}).get("outputs", [{}])[0].get("url")
+                or stat_data.get("data", {}).get("works", [{}])[0].get("resource", {}).get("resource")
+                or stat_data.get("output", {}).get("audio_url")
                 or stat_data.get("outputs", [{}])[0].get("url")
-                or stat_data.get("works",   [{}])[0].get("resource", {}).get("resource")
+                or stat_data.get("works", [{}])[0].get("resource", {}).get("resource")
             )
 
             if audio_url:
                 wav_res = requests.get(audio_url, timeout=120)
                 wav_res.raise_for_status()
-                audio_path = out_dir / "audio.wav"      # keep filename stable for frontend
+                audio_path = out_dir / "audio.wav"
                 audio_path.write_bytes(wav_res.content)
                 return str(audio_path)
 
