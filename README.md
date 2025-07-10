@@ -10,7 +10,7 @@
 ## Features
 - **Image → Music** via DiffRhythm API and GPT‑4.1‑nano with timestamped lyrics
 - **Image → Tags** for creativity prompts
-- **Image → Related Images** via SerpAPI (`SERPAPI_API_KEY` required)
+- **Image → Related Images** via Google scraping (no API key required)
 - REST endpoint `/generate` wraps all pipelines
 - Toggle `TEST_MODE` (via environment variable or in `backend/config.py`) for offline demos.
   When enabled, the backend uses bundled mock data and avoids contacting the
