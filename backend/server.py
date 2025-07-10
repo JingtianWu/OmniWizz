@@ -15,13 +15,14 @@ from diffrhythm_module import run_inference
 
 import os
 from dotenv import load_dotenv
+from config import ALLOW_ORIGINS
 
 load_dotenv()
 
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://jingtianwu.github.io"],  # or ["*"] for testing
+    allow_origins=ALLOW_ORIGINS,  # configure via ALLOW_ORIGINS env var
     allow_methods=["*"],
     allow_headers=["*"],
     allow_credentials=True,
