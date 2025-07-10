@@ -53,54 +53,35 @@ def extract_prompt_and_lyrics(output, lang="en"):
 
     return prompt, lyrics
 
-def normalize_lrc(raw_lyrics):
-    timestamp_pattern = re.compile(r"(\[\d{2}:\d{2}\.\d{2}\])")
-    parts = timestamp_pattern.split(raw_lyrics)
-    lines = []
-    
-    for i in range(1, len(parts), 2):
-        ts = parts[i]
-        txt = parts[i+1].strip() if (i+1) < len(parts) else ""
-        txt = re.sub(r"[\[\]]+", "", txt).strip()
-        if txt:
-            lines.append(f"{ts}{txt}")
-            
-    return "\n".join(lines)
 
 def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_MODE) -> str:
     """
-    Run DiffRhythm’s infer.py in-process, writing
-    - out_dir/lyrics.lrc
-    - out_dir/audio.wav
-    Returns path to audio.wav
+    Generate music using the Udio model via PiAPI.
+
+    Writes ``lyrics.lrc`` (plain text) and ``audio.wav`` into ``out_dir`` and
+    returns the path to the audio file.
     """
     if use_mock:
         # ==== MOCK MODE ====
-
-        # 1) extract prompt & lyrics normally (so you're still exercising extraction logic)
         prompt, lyrics = extract_prompt_and_lyrics(assistant_reply)
-        lrc = normalize_lrc(lyrics)
-        (out_dir / "lyrics.lrc").write_text(lrc, encoding="utf-8")
+        (out_dir / "lyrics.lrc").write_text(lyrics, encoding="utf-8")
 
-        # 2) copy real mock audio file
         mock_wav_path = Path(__file__).parent / "mock_data" / "mock_audio.wav"
         fake_wav = out_dir / "audio.wav"
         shutil.copy(mock_wav_path, fake_wav)
-
         return str(fake_wav)
 
-    # ==== NORMAL REAL MODE ====
+    # ==== REAL MODE ====
     prompt, lyrics = extract_prompt_and_lyrics(assistant_reply)
-    lrc = normalize_lrc(lyrics)
-    (out_dir / "lyrics.lrc").write_text(lrc, encoding="utf-8")
+    (out_dir / "lyrics.lrc").write_text(lyrics, encoding="utf-8")
 
     payload = {
-        "model": "Qubico/diffrhythm",
-        "task_type": "txt2audio-base",
+        "model": "music-u",
+        "task_type": "generate_music",
         "input": {
-            "lyrics": lrc,
-            "style_prompt": prompt,
-            "style_audio": "",
+            "prompt": prompt,
+            "lyrics_type": "user",
+            "lyrics": lyrics,
         },
         "config": {},
     }
@@ -116,7 +97,7 @@ def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_
     resp_data = res.json()
     task_id = resp_data.get("data", {}).get("task_id") or resp_data.get("task_id")
     if not task_id:
-        raise RuntimeError("No task_id returned from DiffRhythm API")
+        raise RuntimeError("No task_id returned from Udio API")
 
     for _ in range(75):
         stat_res = requests.get(
@@ -127,7 +108,7 @@ def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_
         stat_res.raise_for_status()
         stat_data = stat_res.json()
         status = stat_data.get("data", {}).get("status") or stat_data.get("status")
-        print("📄 DiffRhythm poll status data:", stat_data)
+        print("📄 Udio poll status data:", stat_data)
         if status == "completed":
             audio_url = (
                 stat_data.get("data", {}).get("output", {}).get("audio_url")
@@ -148,6 +129,6 @@ def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_
 
             raise RuntimeError("No audio URL found in completed task")
         if status in {"failed", "error"}:
-            raise RuntimeError(f"DiffRhythm task failed: {status}")
+            raise RuntimeError(f"Udio task failed: {status}")
         time.sleep(5)
-    raise TimeoutError("DiffRhythm API timed out")
+    raise TimeoutError("Udio API timed out")

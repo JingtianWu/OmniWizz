@@ -1,7 +1,7 @@
 import requests
 import re
 import ast
-from diffrhythm_module import extract_prompt_and_lyrics, normalize_lrc
+from udio_module import extract_prompt_and_lyrics
 from config import TEST_MODE, OPENAI_API_KEY
 import base64
 import mimetypes
@@ -101,49 +101,46 @@ class ImageToLyricsProcessor(BaseLLMProcessor):
         return (
             "**Music Prompt:** Calm piano, soft ambient pads, morning breeze, light percussion\n\n"
             "**Lyrics:**\n"
-            "[00:10.00]Waves gently touch the shore\n"
-            "[00:14.00]Sunrise colors fill the air\n"
-            "[00:18.00]Mountains watching from afar\n"
-            "[00:22.00]Clouds drift like cotton dreams\n"
-            "[00:26.00]Heartbeats match the morning breeze\n"
-            "[00:30.00]Footprints mark the golden sand\n"
-            "[00:34.00]Melody flows from ocean winds\n"
-            "[00:38.00]Distant peaks hum harmonies\n"
-            "[00:42.00]Seagulls glide above the waves\n"
-            "[00:46.00]Whispers of the coming day\n"
-            "[00:50.00]Warmth wraps around my soul\n"
-            "[00:54.00]Hope awakens with the light"
+            "Waves gently touch the shore\n"
+            "Sunrise colors fill the air\n"
+            "Mountains watching from afar\n"
+            "Clouds drift like cotton dreams\n"
+            "Heartbeats match the morning breeze\n"
+            "Footprints mark the golden sand\n"
+            "Melody flows from ocean winds\n"
+            "Distant peaks hum harmonies\n"
+            "Seagulls glide above the waves\n"
+            "Whispers of the coming day\n"
+            "Warmth wraps around my soul\n"
+            "Hope awakens with the light"
         )
 
     def _build_messages(self):
         if self.language == "en":
             prompt = (
-                "Here is an example of how to describe an image musically and generate lyrics. "
-                "The lyrics should be timestamped in the format [MM:SS.xx], and the timestamps should be chosen "
-                "to match the pacing and emotion of the scene.\n\n"
+                "Here is an example of how to describe an image musically and generate lyrics.\n\n"
                 "**Music Prompt:**\nEpic fantasy orchestra, slow build-up, thunderstorm ambience, Celtic flute melody\n\n"
                 "**Lyrics:**\n"
-                "[00:13.20]Your shadow dances on the dashboard shrine\n"
-                "[00:16.85]Neon ghosts in gasoline rain\n"
-                "[00:20.40]I hear your laughter down the midnight train\n\n"
-                "Now, based on the following image, generate a new musical prompt and a complete set of timestamped lyrics in English only. "
-                "The timestamps must be tailored to the pacing, rhythm, and mood inspired by the image. "
-                "The output must include at least 12 lines of lyrics. The entire output must be written in English only. "
-                "Follow the same format as the example.\n\n"
-                "Start with the **Music Prompt**, then write **Lyrics** with appropriately spaced timestamps in the format [MM:SS.xx]. "
-                "Ensure the lyrics are at least 12 lines long, written only in English, and maintain a consistent emotional tone."
+                "Your shadow dances on the dashboard shrine\n"
+                "Neon ghosts in gasoline rain\n"
+                "I hear your laughter down the midnight train\n\n"
+                "Now, based on the following image, generate a new musical prompt and a complete set of lyrics in English only. "
+                "The output must include at least 12 lines of lyrics written entirely in English. "
+                "Follow the same format as the example, but no timestamps are needed.\n\n"
+                "Start with the **Music Prompt**, then write **Lyrics**. "
+                "Ensure the lyrics are at least 12 lines long and maintain a consistent emotional tone."
             )
         else:
             prompt = (
-                "以下是如何根据图像生成音乐风格和歌词的示例。歌词需要包含时间戳，格式为 [MM:SS.xx]，时间戳应与画面情绪与节奏相符。\n\n"
+                "以下是如何根据图像生成音乐风格和歌词的示例。\n\n"
                 "**音乐风格：**\n伤感氛围电子，慢节奏，钢琴伴奏，雨声背景\n\n"
                 "**歌词：**\n"
-                "[00:13.20]雨滴敲打窗前的寂静\n"
-                "[00:16.85]街灯映出你的背影\n"
-                "[00:20.40]我在梦中等你的回应\n\n"
-                "现在请根据下图生成一个新的音乐风格描述和完整的时间戳歌词。"
+                "雨滴敲打窗前的寂静\n"
+                "街灯映出你的背影\n"
+                "我在梦中等你的回应\n\n"
+                "现在请根据下图生成新的音乐风格描述和完整歌词。"
                 "歌词必须贴合图像传达的情绪与节奏，并且不少于12行。格式需与上例一致。\n\n"
-                "请以 **音乐风格：** 开始，然后生成带有时间戳的 **歌词：**，时间戳格式为 [MM:SS.xx]。歌词不少于12行。"
+                "请以 **音乐风格：** 开始，然后生成 **歌词：**，无需时间戳，歌词不少于12行。"
             )
 
         messages = [{
@@ -158,8 +155,7 @@ class ImageToLyricsProcessor(BaseLLMProcessor):
 
     def _postprocess(self, output: str):
         prompt, lyrics = extract_prompt_and_lyrics(output, lang=self.language)
-        lyrics_norm = normalize_lrc(lyrics)
-        return prompt, lyrics_norm
+        return prompt, lyrics
 
 
 class ImageToTagsProcessor(BaseLLMProcessor):

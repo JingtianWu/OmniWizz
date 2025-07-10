@@ -665,7 +665,7 @@ export default function App() {
                   ? "Music option not selected..."
                   : pendingLyrics
                     ? "Loading lyrics..."
-                    : "Enter lyrics with timestamps"
+                    : "Enter lyrics (optional)"
               }
               disabled={lyricsDisabled}
               className="prompt-input lyrics-textarea"

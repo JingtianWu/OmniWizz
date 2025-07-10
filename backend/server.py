@@ -11,7 +11,7 @@ from pipeline import (
     generate_tags_from_image,
     generate_images_from_image,
 )
-from diffrhythm_module import run_inference
+from udio_module import run_inference
 
 import os
 from dotenv import load_dotenv
