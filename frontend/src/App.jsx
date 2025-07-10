@@ -655,110 +655,23 @@ export default function App() {
             />
           </label>
 
-          <div className="lyrics-field">
+          <label className="prompt-field">
             <div className="prompt-label">Lyrics</div>
-            <div className="lyrics-editor">
-              {lyricsText.split('\n').filter(line => line.trim()).map((line, index) => {
-                const match = line.match(/^\[(\d{2}):(\d{2})\.(\d{2})\](.*)$/);
-                const [minutes, seconds, ms] = match ? [match[1], match[2], match[3]] : ['00', '00', '00'];
-                const content = match ? match[4] : line;
-
-                return (
-                  <div key={index} className="lyrics-row">
-                    <div className="timestamp-inputs">
-                      <span className="timestamp-bracket">[</span>
-                      <input
-                        type="text"
-                        value={minutes}
-                        onChange={e => {
-                          const newMin = e.target.value.replace(/\D/g, '').slice(0, 2).padStart(2, '0');
-                          const lines = lyricsText.split('\n');
-                          lines[index] = `[${newMin}:${seconds}.${ms}]${content}`;
-                          setLyricsText(lines.join('\n'));
-                        }}
-                        className="time-input"
-                        disabled={lyricsDisabled}
-                        maxLength="2"
-                      />
-                      <span className="timestamp-separator">:</span>
-                      <input
-                        type="text"
-                        value={seconds}
-                        onChange={e => {
-                          const newSec = e.target.value.replace(/\D/g, '').slice(0, 2).padStart(2, '0');
-                          const lines = lyricsText.split('\n');
-                          lines[index] = `[${minutes}:${newSec}.${ms}]${content}`;
-                          setLyricsText(lines.join('\n'));
-                        }}
-                        className="time-input"
-                        disabled={lyricsDisabled}
-                        maxLength="2"
-                      />
-                      <span className="timestamp-separator">.</span>
-                      <input
-                        type="text"
-                        value={ms}
-                        onChange={e => {
-                          const newMs = e.target.value.replace(/\D/g, '').slice(0, 2).padStart(2, '0');
-                          const lines = lyricsText.split('\n');
-                          lines[index] = `[${minutes}:${seconds}.${newMs}]${content}`;
-                          setLyricsText(lines.join('\n'));
-                        }}
-                        className="time-input"
-                        disabled={lyricsDisabled}
-                        maxLength="2"
-                      />
-                      <span className="timestamp-bracket">]</span>
-                    </div>
-                    <input
-                      type="text"
-                      value={content}
-                      onChange={e => {
-                        const lines = lyricsText.split('\n');
-                        lines[index] = `[${minutes}:${seconds}.${ms}]${e.target.value}`;
-                        setLyricsText(lines.join('\n'));
-                      }}
-                      className="lyrics-text-input"
-                      placeholder="Enter lyrics..."
-                      disabled={lyricsDisabled}
-                    />
-                    <button
-                      onClick={() => {
-                        const lines = lyricsText.split('\n').filter((_, i) => i !== index);
-                        setLyricsText(lines.join('\n'));
-                      }}
-                      className="remove-line-btn"
-                      disabled={lyricsDisabled}
-                    >
-                      ×
-                    </button>
-                  </div>
-                );
-              })}
-
-              <button
-                onClick={() => {
-                  const lastLine = lyricsText.split('\n').filter(line => line.trim()).pop();
-                  const lastMatch = lastLine?.match(/^\[(\d{2}):(\d{2})\.(\d{2})\]/);
-                  let newTime = '[00:00.00]';
-                  if (lastMatch) {
-                    const totalMs = parseInt(lastMatch[1]) * 60000 +
-                                    parseInt(lastMatch[2]) * 1000 +
-                                    parseInt(lastMatch[3]) * 10 + 4000;
-                    const newMin = Math.floor(totalMs / 60000).toString().padStart(2, '0');
-                    const newSec = Math.floor((totalMs % 60000) / 1000).toString().padStart(2, '0');
-                    const newMs  = Math.floor((totalMs % 1000) / 10).toString().padStart(2, '0');
-                    newTime = `[${newMin}:${newSec}.${newMs}]`;
-                  }
-                  setLyricsText(lyricsText + (lyricsText ? '\n' : '') + newTime);
-                }}
-                className="add-line-btn"
-                disabled={lyricsDisabled}
-              >
-                + Add Line
-              </button>
-            </div>
-          </div>
+            <textarea
+              value={lyricsText}
+              onChange={e => setLyricsText(e.target.value)}
+              placeholder={
+                !doMusic
+                  ? "Music option not selected..."
+                  : pendingLyrics
+                    ? "Loading lyrics..."
+                    : "Enter lyrics with timestamps"
+              }
+              disabled={lyricsDisabled}
+              className="prompt-input lyrics-textarea"
+              rows={8}
+            />
+          </label>
 
           <button
             className="regen-btn"
