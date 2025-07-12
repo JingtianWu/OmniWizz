@@ -26,15 +26,28 @@ def _make_run_dir() -> Path:
 
 
 def generate_music_from_image(
-    image_path: str, language: str = "en", run_dir: Path = None
+    image_path: str,
+    language: str = "en",
+    run_dir: Path = None,
+    audio_path: str | None = None,
 ) -> str:
     # 1) Prepare run_dir
     out_dir = run_dir or _make_run_dir()
     shutil.copy2(image_path, out_dir / Path(image_path).name)
+    if audio_path:
+        shutil.copy2(audio_path, out_dir / Path(audio_path).name)
+
+    song_info = None
+    if audio_path:
+        try:
+            from musicai_module import transcribe_chords
+            song_info = transcribe_chords(audio_path)
+        except Exception as e:
+            print(f"Chord transcription failed: {e}")
 
     # 2) LLM → prompt + lyrics
     uri = _to_data_url(image_path)
-    proc = ImageToLyricsProcessor(uri, language)
+    proc = ImageToLyricsProcessor(uri, language, song_info)
     try:
         raw = proc.generate()
     except Exception as e:
