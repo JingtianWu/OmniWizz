@@ -8,13 +8,14 @@
 
 
 ## Features
-- **Image → Music** via DiffRhythm API and GPT‑4.1‑nano with timestamped lyrics
+- **Image → Music** via Udio (PiAPI) and GPT-4.1-mini lyrics
 - **Image → Tags** for creativity prompts
 - **Image → Related Images** via SerpAPI (`SERPAPI_API_KEY` required)
-- REST endpoint `/generate` wraps all pipelines
+- POST `/generate` triggers selected pipelines via `modes` and `language` params
+- `/regenerate` re-runs music synthesis with your own prompt and lyrics
 - Toggle `TEST_MODE` (via environment variable or in `backend/config.py`) for offline demos.
   When enabled, the backend uses bundled mock data and avoids contacting the
-  GPT‑4.1‑nano and DiffRhythm APIs, suitable for memory‑constrained deployments.
+  GPT-4.1-mini and Udio (PiAPI) services, suitable for memory-constrained deployments.
 
 ---
 
@@ -23,10 +24,12 @@
 ```
 omniwizz/
 ├── backend/                 
-│   ├── llm_module.py        ← LLM wrapper for multimodal understanding
-│   ├── diffrhythm_module.py ← post-process lyrics & invoke singing synthesis
+│   ├── llm_module.py        ← optional Qwen2.5-VL helper
+│   ├── llm_processors.py    ← OpenAI-based processors
+│   ├── serpapi_module.py    ← related image search via SerpAPI
+│   ├── udio_module.py       ← generate music with Udio
 │   ├── pipeline.py          ← core logic: routes inputs through modules
-│   └── server.py            ← REST API endpoint (`POST /generate`)
+│   └── server.py            ← FastAPI endpoints (`/generate`, `/regenerate`)
 │
 ├── DiffRhythm/              
 │
@@ -47,11 +50,11 @@ omniwizz/
    pip install -r requirements.txt
    ```
 
-  Set the `OPENAI_API_KEY` and `PIAPI_KEY` environment variables
+  Set the `OPENAI_API_KEY`, `PIAPI_KEY`, and `SERPAPI_API_KEY` environment variables
   before running the backend in production mode. The backend uses
   `python-dotenv` (included in `requirements.txt`) to load variables from a
   `.env` file if present. Set `TEST_MODE=false` in the environment to enable real API calls. When disabled,
-   the backend submits lyrics and prompts to the PiAPI DiffRhythm service via
+   the backend submits lyrics and prompts to the PiAPI Udio service via
    `POST https://api.piapi.ai/api/v1/task` and polls `GET /api/v1/task/{task_id}`
    until completion.
 
@@ -88,11 +91,7 @@ omniwizz/
 4. Visit `https://<username>.github.io/<repository-name>/` to access OmniWizz.
 
 
-For offline demos or memory-constrained deployments, enable `TEST_MODE` either
-in `backend/config.py` or via an environment variable. This skips calling the
-remote GPT and DiffRhythm services and uses bundled mock data so the API and
-frontend can run without external
-dependencies.
+For offline demos or memory-constrained deployments, enable `TEST_MODE` either in `backend/config.py` or via an environment variable. This skips calling the remote GPT-4.1-mini and Udio (PiAPI) services so the API and frontend can run without external dependencies.
 
 ---
 
