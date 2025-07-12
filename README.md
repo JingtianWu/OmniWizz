@@ -1,4 +1,4 @@
-# OmniWizz — Multimodal Media Transformation Pipeline
+# OmniWizz — Multimodal Inspirational Tool
 
 **OmniWizz** is a comprehensive multimodal framework—accepting **text**, **images**, and **audio** inputs and producing any combination of these outputs.
 
