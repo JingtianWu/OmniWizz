@@ -10,3 +10,4 @@ print("🚦 TEST_MODE =", TEST_MODE)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")        # GPT-4.1-mini
 PIAPI_KEY = os.getenv("PIAPI_KEY", "")                  # Udio cloud inference
 SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY", "")      # SerpAPI for image search
+MUSIC_AI_API_KEY = os.getenv("MUSIC_AI_API_KEY", "")  # Music AI for chord transcription

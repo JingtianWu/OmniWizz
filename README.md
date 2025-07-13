@@ -50,8 +50,10 @@ omniwizz/
    pip install -r requirements.txt
    ```
 
-  Set the `OPENAI_API_KEY`, `PIAPI_KEY`, and `SERPAPI_API_KEY` environment variables
-  before running the backend in production mode. The backend uses
+  Set the `OPENAI_API_KEY`, `PIAPI_KEY`, `SERPAPI_API_KEY`, and `MUSIC_AI_API_KEY` environment variables
+  before running the backend in production mode. Use just the raw key for
+  `MUSIC_AI_API_KEY`; the code automatically adds the required "Bearer"
+  prefix when communicating with Music AI. The backend uses
   `python-dotenv` (included in `requirements.txt`) to load variables from a
   `.env` file if present. Set `TEST_MODE=false` in the environment to enable real API calls. When disabled,
    the backend submits lyrics and prompts to the PiAPI Udio service via

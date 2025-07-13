@@ -13,6 +13,7 @@ from llm_processors import (
 )
 from udio_module import run_inference
 from serpapi_module import fetch_images_for_entity
+from musicai_module import transcribe_chords
 
 OUTPUT_ROOT = Path(__file__).parent.parent / "output"
 
@@ -26,15 +27,36 @@ def _make_run_dir() -> Path:
 
 
 def generate_music_from_image(
-    image_path: str, language: str = "en", run_dir: Path = None
+    image_path: str,
+    language: str = "en",
+    run_dir: Path = None,
+    audio_path: str | None = None,
 ) -> str:
     # 1) Prepare run_dir
     out_dir = run_dir or _make_run_dir()
     shutil.copy2(image_path, out_dir / Path(image_path).name)
 
+    chord_info = None
+    if audio_path:
+        try:
+            chord_info = transcribe_chords(audio_path)
+            with open(out_dir / "chords.json", "w", encoding="utf-8") as f:
+                json.dump(chord_info, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            print(f"Music AI chord transcription failed: {e}")
+
     # 2) LLM → prompt + lyrics
     uri = _to_data_url(image_path)
-    proc = ImageToLyricsProcessor(uri, language)
+    chord_text = None
+    if chord_info:
+        key = chord_info.get("key", "")
+        chords = chord_info.get("chords")
+        if isinstance(chords, list):
+            chords = ", ".join(map(str, chords))
+        if key or chords:
+            chord_text = f"The uploaded audio is in the key of {key} with chords {chords}."
+
+    proc = ImageToLyricsProcessor(uri, language, chord_text)
     try:
         raw = proc.generate()
     except Exception as e:
