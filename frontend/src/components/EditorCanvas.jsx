@@ -88,7 +88,8 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
       bg: bgSrc,
       boxes,
       hasWave,
-      audio: hasWave ? audRef.current.toDataURL("image/png") : null
+      audio: hasWave ? audRef.current.toDataURL("image/png") : null,
+      audioFile: audioFileRef.current
     }),
     getAudioFile: () => audioFileRef.current,
     loadSnapshot: snap => {
@@ -116,9 +117,13 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
         im.onload = () => { audCtx().drawImage(im, 0, 0); };
         im.src = snap.audio;
         setWave(true);
+        if (snap.audioFile) {
+          audioFileRef.current = snap.audioFile;
+        }
       } else {
         audCtx().clearRect(0, 0, W, AUDIO_H);
         setWave(false);
+        audioFileRef.current = null;
       }
     },
     dismissHint: () => setShowHint(false),

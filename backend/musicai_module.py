@@ -1,12 +1,47 @@
 import os
 import time
 import requests
+import wave
+import tempfile
 from pathlib import Path
 from config import TEST_MODE, MUSIC_AI_API_KEY, MUSICAI_CHORD_WORKFLOW
 
 API_BASE = 'https://api.music.ai/v1'
 
 HEADERS = {'Authorization': MUSIC_AI_API_KEY}
+
+
+def _prepare_audio(path: str, limit_sec: float = 30.0) -> str:
+    """Return a path to audio trimmed to ``limit_sec`` seconds if possible."""
+    ext = Path(path).suffix.lower()
+    if ext in {'.wav', '.wave'}:
+        try:
+            with wave.open(path, 'rb') as wf:
+                fr = wf.getframerate()
+                n_frames = wf.getnframes()
+                dur = n_frames / float(fr)
+                if dur <= limit_sec:
+                    return path
+                frames = wf.readframes(int(limit_sec * fr))
+                tmp = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
+                with wave.open(tmp.name, 'wb') as out:
+                    out.setnchannels(wf.getnchannels())
+                    out.setsampwidth(wf.getsampwidth())
+                    out.setframerate(fr)
+                    out.writeframes(frames)
+                return tmp.name
+        except Exception as e:
+            print(f"Audio trim failed: {e}; using full file")
+    else:
+        try:
+            from mutagen import File
+            info = File(path)
+            length = info.info.length if info and info.info else None
+            if length and length <= limit_sec:
+                return path
+        except Exception:
+            pass
+    return path
 
 
 def _get_signed_urls():
@@ -65,8 +100,9 @@ def transcribe_chords(audio_path: str):
     if not MUSIC_AI_API_KEY:
         raise RuntimeError('MUSIC_AI_API_KEY not set')
 
+    trimmed = _prepare_audio(audio_path)
     up_url, dl_url = _get_signed_urls()
-    _upload_file(audio_path, up_url)
+    _upload_file(trimmed, up_url)
     job_id = _create_job(dl_url, MUSICAI_CHORD_WORKFLOW, 'omniwizz_chords')
 
     while True:
@@ -88,5 +124,12 @@ def transcribe_chords(audio_path: str):
     progression = _parse_progressions(data)
     chords = [_clean_chord_label(ch) for ch in progression]
 
+    if trimmed != audio_path:
+        try:
+            os.unlink(trimmed)
+        except Exception:
+            pass
+
     print(f"🎼 MusicAI chords extracted: {chords}")
     return chords
+
