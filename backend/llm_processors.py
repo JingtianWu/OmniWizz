@@ -87,7 +87,7 @@ class BaseLLMProcessor:
 
 
 class ImageToLyricsProcessor(BaseLLMProcessor):
-    def __init__(self, image_path: str, language: str = "en"):
+    def __init__(self, image_path: str, language: str = "en", chords: str = ""):
         super().__init__(
             image_path,
             language,
@@ -96,6 +96,7 @@ class ImageToLyricsProcessor(BaseLLMProcessor):
             top_p=0.95,
             do_sample=True
         )
+        self.chords = chords
 
     def _mock_generate(self):
         return (
@@ -351,6 +352,12 @@ class ImageToVisualEntitiesProcessor(BaseLLMProcessor):
                 {"type": "image", "image": self.image_path}
             ],
         }]
+
+        if self.chords:
+            messages[0]["content"].append({
+                "type": "text",
+                "text": f"The uploaded audio's chord progression is: {self.chords}. Use this information when crafting the music prompt and lyrics."
+            })
 
         return messages
 
