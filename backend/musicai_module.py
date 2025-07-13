@@ -3,6 +3,8 @@ import time
 import requests
 import wave
 import tempfile
+import shutil
+import subprocess
 from pathlib import Path
 from config import TEST_MODE, MUSIC_AI_API_KEY, MUSICAI_CHORD_WORKFLOW
 
@@ -12,8 +14,23 @@ HEADERS = {'Authorization': MUSIC_AI_API_KEY}
 
 
 def _prepare_audio(path: str, limit_sec: float = 30.0) -> str:
-    """Return a path to audio trimmed to ``limit_sec`` seconds if possible."""
+    """Return a new file path trimmed to ``limit_sec`` seconds if possible."""
     ext = Path(path).suffix.lower()
+
+    ffmpeg = shutil.which('ffmpeg')
+    if ffmpeg:
+        tmp = tempfile.NamedTemporaryFile(suffix=ext or '.wav', delete=False)
+        cmd = [ffmpeg, '-y', '-i', path, '-t', str(limit_sec), '-c', 'copy', tmp.name]
+        try:
+            subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            return tmp.name
+        except Exception as e:
+            try:
+                os.unlink(tmp.name)
+            except Exception:
+                pass
+            print(f"ffmpeg trim failed: {e}; falling back")
+
     if ext in {'.wav', '.wave'}:
         try:
             with wave.open(path, 'rb') as wf:
