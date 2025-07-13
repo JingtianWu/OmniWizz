@@ -110,7 +110,7 @@ def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_
         stat_res.raise_for_status()
         stat_data = stat_res.json()
         status = stat_data.get("data", {}).get("status") or stat_data.get("status")
-        print("📄 Udio poll status data:", stat_data)
+        # print("📄 Udio poll status data:", stat_data)
         if status == "completed":
             # NEW: Check audio inside songs[]
             songs = stat_data.get("data", {}).get("output", {}).get("songs", [])

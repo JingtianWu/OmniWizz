@@ -118,14 +118,25 @@ class ImageToLyricsProcessor(BaseLLMProcessor):
 
     def _build_messages(self):
         if self.language == "en":
-            chord_text = ""
-            if self.chords.get("chords"):
-                prog = " - ".join(self.chords["chords"])
-                key = self.chords.get("key", "")
-                chord_text = f"The user's audio is in the key of {key} with the chord progression: {prog}. Use this as inspiration.\n\n"
+            if self.chords:
+                prog = " - ".join(self.chords)
+                chord_text = (
+                    f"The user's audio has the chord progression: {prog}. "
+                    "Use this progression as musical inspiration when constructing the prompt and lyrics.\n\n"
+                )
+                example_prompt = (
+                    "**Music Prompt:**\nHaunting folk ballad with fingerpicked acoustic guitar, soft pads, and a melancholic violin. "
+                    "Chord progression: Em - C - G - Em\n\n"
+                )
+            else:
+                chord_text = ""
+                example_prompt = (
+                    "**Music Prompt:**\nEpic fantasy orchestra, slow build-up, thunderstorm ambience, Celtic flute melody\n\n"
+                )
+
             prompt = (
                 "Here is an example of how to describe an image musically and generate lyrics.\n\n"
-                "**Music Prompt:**\nEpic fantasy orchestra, slow build-up, thunderstorm ambience, Celtic flute melody\n\n"
+                f"{example_prompt}"
                 "**Lyrics:**\n"
                 "Your shadow dances on the dashboard shrine\n"
                 "Neon ghosts in gasoline rain\n"
@@ -137,14 +148,15 @@ class ImageToLyricsProcessor(BaseLLMProcessor):
                 "Ensure the lyrics are at least 12 lines long and maintain a consistent emotional tone."
             )
         else:
-            chord_text = ""
-            if self.chords.get("chords"):
-                prog = " - ".join(self.chords["chords"])
-                key = self.chords.get("key", "")
-                chord_text = f"用户上传的音频被分析为{key}调，和弦进行: {prog}。请结合这些信息。\n\n"
+            if self.chords:
+                prog = " - ".join(self.chords)
+                chord_text = f"用户上传的音频和弦进行为: {prog}。请结合这些信息。\n\n"
+            else:
+                chord_text = ""
+
             prompt = (
                 "以下是如何根据图像生成音乐风格和歌词的示例。\n\n"
-                "**音乐风格：**\n伤感氛围电子，慢节奏，钢琴伴奏，雨声背景\n\n"
+                "**音乐风格：**\n伤感，慢节奏，钢琴，雨声\n\n"
                 "**歌词：**\n"
                 "雨滴敲打窗前的寂静\n"
                 "街灯映出你的背影\n"
@@ -161,7 +173,7 @@ class ImageToLyricsProcessor(BaseLLMProcessor):
                 {"type": "image", "image": self.image_path}
             ],
         }]
-        
+
         return messages
 
     def _postprocess(self, output: str):

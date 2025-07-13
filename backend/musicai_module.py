@@ -58,7 +58,7 @@ def _clean_chord_label(chord: str) -> str:
 
 
 def transcribe_chords(audio_path: str):
-    """Return dict with 'key' and 'chords' list from Music AI transcription."""
+    """Return list of chords from Music AI transcription."""
     if TEST_MODE:
         return {'key': 'C major', 'chords': ['C', 'G', 'Am', 'F']}
 
@@ -86,8 +86,7 @@ def transcribe_chords(audio_path: str):
     r.raise_for_status()
     data = r.json()
     progression = _parse_progressions(data)
-    key = ''
-    for seg in data:
-        key = seg.get('key_simple') or seg.get('key', {}).get('simple') or key
     chords = [_clean_chord_label(ch) for ch in progression]
-    return {'key': key, 'chords': chords}
+
+    print(f"🎼 MusicAI chords extracted: {chords}")
+    return chords

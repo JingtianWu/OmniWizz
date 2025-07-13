@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import "../index.css";
 
-// Expected generation time in milliseconds (≈ 75 s)
-const EXPECTED_DURATION = 75_000;
+// Expected generation time in milliseconds (≈ 90 s)
+const EXPECTED_DURATION = 90_000;
 
 export default function VinylIcon({ playing, loading = false, onClick }) {
   const [hint, setHint] = useState(loading ? null : "play");
