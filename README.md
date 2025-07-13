@@ -9,6 +9,7 @@
 
 ## Features
 - **Image → Music** via Udio (PiAPI) and GPT-4.1-mini lyrics
+- **Optional audio upload analyzed with Music AI for key & chord progression**
 - **Image → Tags** for creativity prompts
 - **Image → Related Images** via SerpAPI (`SERPAPI_API_KEY` required)
 - POST `/generate` triggers selected pipelines via `modes` and `language` params
@@ -50,8 +51,10 @@ omniwizz/
    pip install -r requirements.txt
    ```
 
-  Set the `OPENAI_API_KEY`, `PIAPI_KEY`, and `SERPAPI_API_KEY` environment variables
-  before running the backend in production mode. The backend uses
+  Set the `OPENAI_API_KEY`, `PIAPI_KEY`, `SERPAPI_API_KEY`, and `MUSIC_AI_API_KEY` environment variables
+  before running the backend in production mode. The chord transcription workflow can be
+  configured via the optional `MUSICAI_CHORD_WORKFLOW` variable.
+  The backend uses
   `python-dotenv` (included in `requirements.txt`) to load variables from a
   `.env` file if present. Set `TEST_MODE=false` in the environment to enable real API calls. When disabled,
    the backend submits lyrics and prompts to the PiAPI Udio service via

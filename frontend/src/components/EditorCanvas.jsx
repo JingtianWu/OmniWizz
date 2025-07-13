@@ -23,6 +23,7 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
   const bgRef = useRef(null);   // background layer
   const inkRef = useRef(null);  // pen / eraser
   const audRef = useRef(null);  // waveform strip
+  const audioFileRef = useRef(null);
   const imgRef = useRef(null);  // <img> for background
   const contRef = useRef(null); // overall container
   const dragRef = useRef(null); // {id,dx,dy} while dragging text
@@ -89,6 +90,7 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
       hasWave,
       audio: hasWave ? audRef.current.toDataURL("image/png") : null
     }),
+    getAudioFile: () => audioFileRef.current,
     loadSnapshot: snap => {
       if (!snap) return;
 
@@ -314,6 +316,7 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
     e.preventDefault();
     const f = e.dataTransfer.files[0];
     if(!f?.type.startsWith("audio/")) return;
+    audioFileRef.current = f;
     const AC = new (window.AudioContext||window.webkitAudioContext)();
     const rd = new FileReader();
     rd.onload = ev=>{
@@ -485,7 +488,7 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
   /* -------------- Clear all -------------- */
   const clearAll = () => {
     inkCtx().clearRect(0,0,W,H); audCtx().clearRect(0,0,W,AUDIO_H);
-    setWave(false); paintBg(null); setBg(null); imgRef.current=null;
+    setWave(false); audioFileRef.current=null; paintBg(null); setBg(null); imgRef.current=null;
     setBoxes([]); setSel(null);
   };
 
@@ -498,6 +501,7 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
   const clearAudio = () => {
     audCtx().clearRect(0, 0, W, AUDIO_H);
     setWave(false);
+    audioFileRef.current = null;
   };
 
   /* -------------- Handle font size changes -------------- */

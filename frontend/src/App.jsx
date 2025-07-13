@@ -87,7 +87,7 @@ export default function App() {
     const H = bgCanvas.height;
     const hasWave = !!(audioCanvas && editorRef.current?.hasUserAudio?.());
 
-    const finalHeight = hasWave ? H + audioCanvas.height : H;
+    const finalHeight = H;
     const off = document.createElement("canvas");
     off.width = W;
     off.height = finalHeight;
@@ -113,9 +113,7 @@ export default function App() {
       ctx.fillText(tb.innerText, x, y);
     });
 
-    if (hasWave) {
-      ctx.drawImage(audioCanvas, 0, H);
-    }
+    // waveform is not drawn in the backend image
 
     // Create a separate canvas for display (main part only)
     const displayCanvas = document.createElement("canvas");
@@ -149,10 +147,11 @@ export default function App() {
       setCanvasState(editorRef.current.getSnapshot());
     }
 
-    // Send full canvas (with waveform if present) for processing
+    // Send canvas without waveform for processing
     off.toBlob(blob => {
       const file = new File([blob], "canvas.jpg", { type: "image/jpeg" });
-      handleFile(file);
+      const audioFile = editorRef.current?.getAudioFile?.();
+      handleFile(file, audioFile);
     }, "image/jpeg", 0.92);
   };
 
@@ -174,7 +173,7 @@ export default function App() {
   };
 
   /* File upload + generate */
-  async function handleFile(file) {
+  async function handleFile(file, audioFile) {
     if (!file || (!doTags && !doMusic && !doImages)) return;
 
     setTags([]);
@@ -196,6 +195,7 @@ export default function App() {
 
     const data = new FormData();
     data.append("file", file);
+    if (audioFile) data.append("audio", audioFile);
     const modes = [doMusic && "music", doTags && "tags", doImages && "images"]
       .filter(Boolean)
       .join(",");
