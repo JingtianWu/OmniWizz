@@ -87,7 +87,7 @@ class BaseLLMProcessor:
 
 
 class ImageToLyricsProcessor(BaseLLMProcessor):
-    def __init__(self, image_path: str, language: str = "en"):
+    def __init__(self, image_path: str, language: str = "en", chord_info: str | None = None):
         super().__init__(
             image_path,
             language,
@@ -96,6 +96,7 @@ class ImageToLyricsProcessor(BaseLLMProcessor):
             top_p=0.95,
             do_sample=True
         )
+        self.chord_info = chord_info
 
     def _mock_generate(self):
         return (
@@ -143,12 +144,14 @@ class ImageToLyricsProcessor(BaseLLMProcessor):
                 "请以 **音乐风格：** 开始，然后生成 **歌词：**，无需时间戳，歌词不少于12行。"
             )
 
+        contents = [{"type": "text", "text": prompt}]
+        if self.chord_info:
+            contents.append({"type": "text", "text": self.chord_info})
+        contents.append({"type": "image", "image": self.image_path})
+
         messages = [{
             "role": "user",
-            "content": [
-                {"type": "text", "text": prompt},
-                {"type": "image", "image": self.image_path}
-            ],
+            "content": contents,
         }]
         
         return messages
