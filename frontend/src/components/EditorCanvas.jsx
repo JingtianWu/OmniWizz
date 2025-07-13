@@ -41,6 +41,7 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
   const [selId, setSel]  = useState(null);
 
   const [hasWave, setWave] = useState(false);   // waveform present?
+  const [audioFile, setAudioFile] = useState(null); // original audio file
   const [showHint, setShowHint] = useState(true); // show start hint?
   const [showTrashMenu, setShowTrashMenu] = useState(false);
 
@@ -114,13 +115,16 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
         im.onload = () => { audCtx().drawImage(im, 0, 0); };
         im.src = snap.audio;
         setWave(true);
+        setAudioFile(null);
       } else {
         audCtx().clearRect(0, 0, W, AUDIO_H);
         setWave(false);
+        setAudioFile(null);
       }
     },
     dismissHint: () => setShowHint(false),
-    hasUserAudio: () => hasWave
+    hasUserAudio: () => hasWave,
+    getAudioFile: () => audioFile
   }));
 
   // Close any active text editing when switching tools
@@ -314,6 +318,7 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
     e.preventDefault();
     const f = e.dataTransfer.files[0];
     if(!f?.type.startsWith("audio/")) return;
+    setAudioFile(f);
     const AC = new (window.AudioContext||window.webkitAudioContext)();
     const rd = new FileReader();
     rd.onload = ev=>{
@@ -485,7 +490,7 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
   /* -------------- Clear all -------------- */
   const clearAll = () => {
     inkCtx().clearRect(0,0,W,H); audCtx().clearRect(0,0,W,AUDIO_H);
-    setWave(false); paintBg(null); setBg(null); imgRef.current=null;
+    setWave(false); setAudioFile(null); paintBg(null); setBg(null); imgRef.current=null;
     setBoxes([]); setSel(null);
   };
 
@@ -498,6 +503,7 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
   const clearAudio = () => {
     audCtx().clearRect(0, 0, W, AUDIO_H);
     setWave(false);
+    setAudioFile(null);
   };
 
   /* -------------- Handle font size changes -------------- */

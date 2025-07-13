@@ -81,13 +81,10 @@ export default function App() {
   const captureAndGenerate = () => {
     const art = document.querySelector(".artboard");
     const [bgCanvas, inkCanvas] = art.querySelectorAll("canvas");
-    const audioCanvas = document.querySelector(".wave-strip");
-
     const W = bgCanvas.width;
     const H = bgCanvas.height;
-    const hasWave = !!(audioCanvas && editorRef.current?.hasUserAudio?.());
 
-    const finalHeight = hasWave ? H + audioCanvas.height : H;
+    const finalHeight = H;
     const off = document.createElement("canvas");
     off.width = W;
     off.height = finalHeight;
@@ -113,9 +110,7 @@ export default function App() {
       ctx.fillText(tb.innerText, x, y);
     });
 
-    if (hasWave) {
-      ctx.drawImage(audioCanvas, 0, H);
-    }
+    // waveform is displayed on the canvas but not sent to the backend
 
     // Create a separate canvas for display (main part only)
     const displayCanvas = document.createElement("canvas");
@@ -196,6 +191,8 @@ export default function App() {
 
     const data = new FormData();
     data.append("file", file);
+    const aud = editorRef.current?.getAudioFile?.();
+    if (aud) data.append("audio", aud);
     const modes = [doMusic && "music", doTags && "tags", doImages && "images"]
       .filter(Boolean)
       .join(",");

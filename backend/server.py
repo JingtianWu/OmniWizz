@@ -40,13 +40,20 @@ OUTPUT_DIR = Path(__file__).parent.parent / "output"
 async def generate(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
+    audio: UploadFile = File(None),
     language: str = "en",
     modes: str = "music,tags,images",  # default all three
 ):
-    # 1) Write upload to disk
+    # 1) Write uploads to disk
     img_path = UPLOAD_DIR / file.filename
     with open(img_path, "wb") as out:
         shutil.copyfileobj(file.file, out)
+
+    audio_path = None
+    if audio is not None:
+        audio_path = UPLOAD_DIR / audio.filename
+        with open(audio_path, "wb") as out:
+            shutil.copyfileobj(audio.file, out)
 
     # 2) Create single run folder
     run_dir = _make_run_dir()
@@ -84,7 +91,11 @@ async def generate(
         if "music" in modes_set:
             folder = run_dir.name
             background_tasks.add_task(
-                generate_music_from_image, str(img_path), language, run_dir
+                generate_music_from_image,
+                str(img_path),
+                language,
+                run_dir,
+                str(audio_path) if audio_path else None,
             )
             results["music"] = {
                 "folder": folder,
