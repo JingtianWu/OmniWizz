@@ -1,9 +1,21 @@
 import shutil
 from pathlib import Path
 
-from fastapi import FastAPI, UploadFile, Request, File, Form, HTTPException, BackgroundTasks
+from fastapi import FastAPI, UploadFile, Request, File, Form, HTTPException, BackgroundTasks, Depends
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from sqlmodel import Session as DBSession, SQLModel
+import time
+from uuid import uuid4
+
+from log_db import (
+    create_db_and_tables,
+    get_session,
+    log_event,
+    SessionEntry,
+    engine as DB_ENGINE,
+)
 
 from pipeline import (
     _make_run_dir,
@@ -27,6 +39,34 @@ app.add_middleware(
     allow_credentials=True,
 )
 
+
+class SessionIDMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        sid = request.headers.get("x-omni-session")
+        if not sid:
+            sid = uuid4().hex
+        request.state.session_id = sid
+
+        with DBSession(DB_ENGINE) as db:
+            sess = db.get(SessionEntry, sid)
+            if not sess:
+                sess = SessionEntry(
+                    id=sid,
+                    user_agent=request.headers.get("user-agent", ""),
+                    locale=request.headers.get("accept-language"),
+                )
+                db.add(sess)
+            sess.ended_at = None
+            db.commit()
+
+        response = await call_next(request)
+        response.headers["x-omni-session"] = sid
+        return response
+
+
+app.add_middleware(SessionIDMiddleware)
+create_db_and_tables()
+
 @app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
 def root(request: Request):
     return {"status": "OmniWizz API is live"}
@@ -39,11 +79,14 @@ OUTPUT_DIR = Path(__file__).parent.parent / "output"
 @app.post("/generate")
 async def generate(
     background_tasks: BackgroundTasks,
+    request: Request,
     file: UploadFile = File(...),
     audio: UploadFile | None = File(None),
     language: str = "en",
     modes: str = "music,tags,images",  # default all three
+    db: DBSession = Depends(get_session),
 ):
+    start_t = time.monotonic()
     # 1) Write upload to disk
     img_path = UPLOAD_DIR / file.filename
     with open(img_path, "wb") as out:
@@ -108,15 +151,27 @@ async def generate(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+    latency = time.monotonic() - start_t
+    log_event(
+        db,
+        request.state.session_id,
+        "generate",
+        modes=modes,
+        folder=run_dir.name,
+        latency=latency,
+    )
+
     return results
 
 
 @app.post("/regenerate")
 async def regenerate(
     background_tasks: BackgroundTasks,
+    request: Request,
     folder: str = Form(...),
     prompt: str = Form(...),
     lyrics: str = Form(...),
+    db: DBSession = Depends(get_session),
 ):
     out_dir = OUTPUT_DIR / folder
     if not out_dir.exists():
@@ -134,6 +189,15 @@ async def regenerate(
     
     assistant_reply = f"**Music Prompt:** {prompt}\n\n**Lyrics:**\n{lyrics}"
     background_tasks.add_task(run_inference, assistant_reply, out_dir)
+
+    log_event(
+        db,
+        request.state.session_id,
+        "regenerate",
+        folder=folder,
+        prompt_len=len(prompt),
+        lyrics_len=len(lyrics),
+    )
     return {
         "audio_url": f"/output/{folder}/audio.wav",
         "pending": True,
@@ -141,7 +205,7 @@ async def regenerate(
 
 
 @app.get("/output/{folder}/{subpath:path}")
-async def fetch(folder: str, subpath: str):
+async def fetch(folder: str, subpath: str, request: Request, db: DBSession = Depends(get_session)):
     fp = OUTPUT_DIR / folder / subpath
     if not fp.exists():
         raise HTTPException(404, "Not found")
@@ -156,4 +220,19 @@ async def fetch(folder: str, subpath: str):
     else:
         media_type = "application/octet-stream"
 
+    log_event(db, request.state.session_id, "fetch_output", path=f"{folder}/{subpath}")
     return FileResponse(str(fp), media_type=media_type)
+
+
+class ClientEvent(SQLModel):
+    type: str
+    payload: dict | None = None
+
+
+@app.post("/log/batch")
+async def log_batch(events: list[ClientEvent], request: Request, db: DBSession = Depends(get_session)):
+    sid = request.state.session_id
+    for ev in events:
+        payload = ev.payload or {}
+        log_event(db, sid, ev.type, **payload)
+    return {"status": "ok"}

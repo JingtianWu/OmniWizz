@@ -3,6 +3,7 @@ import EditorCanvas from "./components/EditorCanvas";
 import VinylIcon from "./components/VinylIcon";
 import { MoreVertical } from "lucide-react";
 import "./index.css";
+import useOmniLogger from "./useOmniLogger";
 
 const BACKEND_URL =
   process.env.NODE_ENV === "development"
@@ -40,6 +41,7 @@ function getPolarPosition(index, total, baseRadius, randomRange = 0, aspectX = 1
 
 export default function App() {
   const editorRef = useRef(null);
+  const log = useOmniLogger();
   /* Toggles */
   const [doTags, setDoTags]     = useState(true);
   const [doMusic, setDoMusic]   = useState(true);
@@ -160,16 +162,19 @@ export default function App() {
     const v = e.target.checked;
     if (!v && !doMusic && !doImages) return;
     setDoTags(v);
+    log("toggle_tags", { value: v });
   };
   const onMusicToggle = e => {
     const v = e.target.checked;
     if (!v && !doTags && !doImages) return;
     setDoMusic(v);
+    log("toggle_music", { value: v });
   };
   const onImagesToggle = e => {
     const v = e.target.checked;
     if (!v && !doTags && !doMusic) return;
     setDoImages(v);
+    log("toggle_images", { value: v });
   };
 
   /* File upload + generate */
@@ -199,6 +204,7 @@ export default function App() {
     const modes = [doMusic && "music", doTags && "tags", doImages && "images"]
       .filter(Boolean)
       .join(",");
+    log("generate_click", { modes, language });
 
     try {
       const res = await fetch(`${BACKEND_URL}/generate?modes=${modes}&language=${language}`, {
@@ -281,6 +287,7 @@ export default function App() {
       return;
     }
     if (!runFolder) return;
+    log("regenerate_click", { folder: runFolder });
     setRegenLoading(true);
     setPendingMusic(true);
     if (audioRef.current) {
@@ -743,6 +750,7 @@ export default function App() {
                     const normalizedAngle = angle < 0 ? angle + 2 * Math.PI : angle;
                     const progress = normalizedAngle / (2 * Math.PI);
                     audioRef.current.currentTime = progress * duration;
+                    log("audio_seek", { to: progress * duration });
                   }}
                 />
                 <VinylIcon
@@ -786,8 +794,8 @@ export default function App() {
                 <audio
                   ref={audioRef}
                   src={audioUrl}
-                  onPlay={() => setPlaying(true)}
-                  onPause={() => setPlaying(false)}
+                  onPlay={() => { setPlaying(true); log("audio_play"); }}
+                  onPause={() => { setPlaying(false); log("audio_pause"); }}
                   onEnded={() => setPlaying(false)}
                   onLoadedMetadata={() => setDuration(audioRef.current.duration)}
                   onTimeUpdate={() => setCurrentTime(audioRef.current.currentTime)}
