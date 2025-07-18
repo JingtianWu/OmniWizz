@@ -6,6 +6,7 @@ from typing import Optional, Any
 from uuid import uuid4
 
 from sqlmodel import SQLModel, Field, create_engine, Session
+from sqlalchemy import Column, JSON
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./omni_logs.db")
 
@@ -25,7 +26,7 @@ class Event(SQLModel, table=True):
     session_id: str = Field(foreign_key="sessionentry.id", index=True)
     ts: datetime = Field(default_factory=datetime.utcnow, index=True)
     type: str
-    payload: dict = Field(default_factory=dict)
+    payload: dict = Field(default_factory=dict, sa_column=Column(JSON))
 
 
 def create_db_and_tables() -> None:
