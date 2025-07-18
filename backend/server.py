@@ -220,7 +220,26 @@ async def fetch(folder: str, subpath: str, request: Request, db: DBSession = Dep
     else:
         media_type = "application/octet-stream"
 
-    log_event(db, request.state.session_id, "fetch_output", path=f"{folder}/{subpath}")
+    asset_type = "other"
+    sp_lower = subpath.lower()
+    if sp_lower == "tags.json":
+        asset_type = "tags"
+    elif sp_lower.startswith("images/"):
+        asset_type = "image"
+    elif sp_lower.endswith("prompt.txt"):
+        asset_type = "prompt"
+    elif sp_lower.endswith("lyrics.lrc"):
+        asset_type = "lyrics"
+    elif sp_lower.endswith(".wav"):
+        asset_type = "audio"
+
+    log_event(
+        db,
+        request.state.session_id,
+        "fetch_output",
+        path=f"{folder}/{subpath}",
+        asset_type=asset_type,
+    )
     return FileResponse(str(fp), media_type=media_type)
 
 

@@ -76,6 +76,10 @@ export default function App() {
   const [runFolder, setRunFolder] = useState("");
   const [promptText, setPromptText] = useState("");
   const [lyricsText, setLyricsText] = useState("");
+  const origPromptRef = useRef("");
+  const origLyricsRef = useRef("");
+  const promptModifiedRef = useRef(false);
+  const lyricsModifiedRef = useRef(false);
   const [regenLoading, setRegenLoading] = useState(false);
   const [pendingPrompt, setPendingPrompt] = useState(false);
   const [pendingLyrics, setPendingLyrics] = useState(false);
@@ -189,6 +193,10 @@ export default function App() {
     setRunFolder("");
     setPromptText("");
     setLyricsText("");
+    origPromptRef.current = "";
+    origLyricsRef.current = "";
+    promptModifiedRef.current = false;
+    lyricsModifiedRef.current = false;
     setPendingPrompt(false);
     setPendingLyrics(false);
     setStage("loading");
@@ -229,11 +237,17 @@ export default function App() {
             fetch(withBase(j.music.lyrics_url))
           ]);
           if (prResp.ok) {
-            setPromptText(await prResp.text());
+            const txt = await prResp.text();
+            origPromptRef.current = txt;
+            promptModifiedRef.current = false;
+            setPromptText(txt);
             setPendingPrompt(false);
           }
           if (lyrResp.ok) {
-            setLyricsText(await lyrResp.text());
+            const lyr = await lyrResp.text();
+            origLyricsRef.current = lyr;
+            lyricsModifiedRef.current = false;
+            setLyricsText(lyr);
             setPendingLyrics(false);
           }
         } catch {}
@@ -251,6 +265,7 @@ export default function App() {
   }
 
   const returnToEditor = () => {
+    log("reedit_canvas_click");
     // Preserve audio state
     const wasPlaying = playing;
     const currentAudioTime = currentTime;
@@ -403,7 +418,10 @@ export default function App() {
         try {
           const r = await fetch(`${BACKEND_URL}/output/${runFolder}/prompt.txt`, { cache: "no-store" });
           if (r.ok) {
-            setPromptText(await r.text());
+            const txt = await r.text();
+            origPromptRef.current = txt;
+            promptModifiedRef.current = false;
+            setPromptText(txt);
             setPendingPrompt(false);
           }
         } catch {}
@@ -412,7 +430,10 @@ export default function App() {
         try {
           const r = await fetch(`${BACKEND_URL}/output/${runFolder}/lyrics.lrc`, { cache: "no-store" });
           if (r.ok) {
-            setLyricsText(await r.text());
+            const lyr = await r.text();
+            origLyricsRef.current = lyr;
+            lyricsModifiedRef.current = false;
+            setLyricsText(lyr);
             setPendingLyrics(false);
           }
         } catch {}
@@ -433,6 +454,7 @@ export default function App() {
   const regenDisabled   = !doMusic || regenLoading || pendingMusic;
 
   const handleDownloadAudio = async () => {
+    log("download_audio_click");
     if (!audioUrl) return;
     try {
       const resp = await fetch(audioUrl);
@@ -457,6 +479,7 @@ export default function App() {
           <div
             className="canvas-frame back-button"
             onClick={() => {
+              log("back_to_results_click");
               const art = document.querySelector(".artboard");
               if (art) {
                 const [bg, ink] = art.querySelectorAll("canvas");
@@ -649,7 +672,18 @@ export default function App() {
             <div className="prompt-label">Prompt</div>
             <textarea
               value={promptText}
-              onChange={e => setPromptText(e.target.value)}
+              onChange={e => {
+                const v = e.target.value;
+                setPromptText(v);
+                const orig = origPromptRef.current;
+                if (v !== orig) {
+                  if (!promptModifiedRef.current) log("prompt_modified");
+                  promptModifiedRef.current = true;
+                } else if (promptModifiedRef.current) {
+                  log("prompt_reset");
+                  promptModifiedRef.current = false;
+                }
+              }}
               placeholder={
                 !doMusic
                   ? "Music option not selected..."
@@ -666,7 +700,18 @@ export default function App() {
             <div className="prompt-label">Lyrics</div>
             <textarea
               value={lyricsText}
-              onChange={e => setLyricsText(e.target.value)}
+              onChange={e => {
+                const v = e.target.value;
+                setLyricsText(v);
+                const orig = origLyricsRef.current;
+                if (v !== orig) {
+                  if (!lyricsModifiedRef.current) log("lyrics_modified");
+                  lyricsModifiedRef.current = true;
+                } else if (lyricsModifiedRef.current) {
+                  log("lyrics_reset");
+                  lyricsModifiedRef.current = false;
+                }
+              }}
               placeholder={
                 !doMusic
                   ? "Music option not selected..."
@@ -750,7 +795,7 @@ export default function App() {
                     const normalizedAngle = angle < 0 ? angle + 2 * Math.PI : angle;
                     const progress = normalizedAngle / (2 * Math.PI);
                     audioRef.current.currentTime = progress * duration;
-                    log("audio_seek", { to: progress * duration });
+                    log("audio_seek_click", { to: progress * duration });
                   }}
                 />
                 <VinylIcon
@@ -848,7 +893,11 @@ export default function App() {
             <button
               onClick={() => {
                 const groups = Math.max(1, Math.ceil(tags.length / 8));
-                setGroupIdx(g => (g - 1 + groups) % groups);
+                setGroupIdx(g => {
+                  const next = (g - 1 + groups) % groups;
+                  log("carousel_prev_click", { index: next });
+                  return next;
+                });
               }}
               style={{
                 fontSize: "1.2rem",
@@ -866,7 +915,11 @@ export default function App() {
             <button
               onClick={() => {
                 const groups = Math.max(1, Math.ceil(tags.length / 8));
-                setGroupIdx(g => (g + 1) % groups);
+                setGroupIdx(g => {
+                  const next = (g + 1) % groups;
+                  log("carousel_next_click", { index: next });
+                  return next;
+                });
               }}
               style={{
                 fontSize: "1.2rem",
