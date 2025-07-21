@@ -4,7 +4,7 @@ from pathlib import Path
 from fastapi import FastAPI, UploadFile, Request, File, Form, HTTPException, BackgroundTasks, Depends
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from . import dev_tools
+import dev_tools
 from starlette.middleware.base import BaseHTTPMiddleware
 from sqlmodel import Session as DBSession, SQLModel
 import time
