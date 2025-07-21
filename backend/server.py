@@ -4,6 +4,7 @@ from pathlib import Path
 from fastapi import FastAPI, UploadFile, Request, File, Form, HTTPException, BackgroundTasks, Depends
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from backend import dev_tools
 from starlette.middleware.base import BaseHTTPMiddleware
 from sqlmodel import Session as DBSession, SQLModel
 import time
@@ -31,6 +32,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = FastAPI()
+app.include_router(dev_tools.router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://jingtianwu.github.io"],  # or ["*"] for testing
