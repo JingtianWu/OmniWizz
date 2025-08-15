@@ -4,8 +4,6 @@
 
 > **Ultimate Goal:** Let users supply any combination of text, image, or audio as input, and receive any combination of these modalities as output, according to their creative or analytic needs.
 
-> **Current Stage:** Initial **image → music** prototype complete.
-
 
 ## Features
 - **Image → Music** via Udio (PiAPI) and GPT-4.1-mini lyrics
