@@ -15,7 +15,8 @@ output/
 test-output/
 *.log
 backend/omni_logs.db
-event_logs.csv
+omni_logs.db
+interaction_logs.csv
 
 # Virtual environments
 venv/
