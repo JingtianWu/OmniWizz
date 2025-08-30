@@ -72,12 +72,9 @@ def generate_music_from_image(
     # 4) Assemble assistant reply for Ace Step
     assistant_reply = f"**Music Prompt:** {prompt}\n\n**Lyrics:**\n{lyrics}"
 
-    # 5) Inference (or mock)
-    try:
-        audio_path = run_inference(assistant_reply, out_dir, style_audio_path=str(audio_path) if audio_path else None)
-    except Exception as e:
-        print(f"Ace Step failed: {e}; using mock audio")
-        audio_path = run_inference(assistant_reply, out_dir, style_audio_path=str(audio_path) if audio_path else None, use_mock=True)
+    # 5) Inference with automatic retry inside run_inference
+    style_audio = str(audio_path) if audio_path else None
+    audio_path = run_inference(assistant_reply, out_dir, style_audio_path=style_audio)
     return audio_path
 
 

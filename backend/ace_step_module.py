@@ -73,6 +73,7 @@ def run_inference(
     style_audio_path: str | None = None,
     *,
     use_mock: bool = TEST_MODE,
+    retries: int = 1,
 ) -> str:
     """
     Generate music using the Ace Step model via PiAPI.
@@ -80,72 +81,81 @@ def run_inference(
     Writes ``lyrics.lrc`` (plain text) and ``audio.wav`` into ``out_dir`` and
     returns the path to the audio file.
     """
-    if use_mock:
-        # ==== MOCK MODE ====
-        prompt, lyrics = extract_prompt_and_lyrics(assistant_reply)
-        (out_dir / "lyrics.lrc").write_text(lyrics, encoding="utf-8")
+    prompt, lyrics = extract_prompt_and_lyrics(assistant_reply)
+    (out_dir / "lyrics.lrc").write_text(lyrics, encoding="utf-8")
 
+    if use_mock:
         mock_wav_path = Path(__file__).parent / "mock_data" / "mock_audio.wav"
         fake_wav = out_dir / "audio.wav"
         shutil.copy(mock_wav_path, fake_wav)
         return str(fake_wav)
 
-    # ==== REAL MODE ====
-    prompt, lyrics = extract_prompt_and_lyrics(assistant_reply)
-    (out_dir / "lyrics.lrc").write_text(lyrics, encoding="utf-8")
+    attempt = 0
+    while attempt <= retries:
+        try:
+            input_payload = {
+                "style_prompt": prompt,
+                "lyrics": lyrics if lyrics.strip() else "[inst]",
+                "duration": 30,
+                "negative_style_prompt": "",
+            }
+            if style_audio_path:
+                input_payload["style_audio"] = _to_data_url(style_audio_path)
 
-    input_payload = {
-        "style_prompt": prompt,
-        "lyrics": lyrics if lyrics.strip() else "[inst]",
-        "duration": 30,
-        "negative_style_prompt": "",
-    }
-    if style_audio_path:
-        input_payload["style_audio"] = _to_data_url(style_audio_path)
+            payload = {
+                "model": "Qubico/ace-step",
+                "task_type": "txt2audio",
+                "input": input_payload,
+                "config": {},
+            }
+            headers = {"X-API-Key": PIAPI_KEY}
 
-    payload = {
-        "model": "Qubico/ace-step",
-        "task_type": "txt2audio",
-        "input": input_payload,
-        "config": {},
-    }
-    headers = {"X-API-Key": PIAPI_KEY}
-
-    res = requests.post(
-        "https://api.piapi.ai/api/v1/task",
-        json=payload,
-        headers=headers,
-        timeout=120,
-    )
-    res.raise_for_status()
-    resp_data = res.json()
-    task_id = resp_data.get("data", {}).get("task_id") or resp_data.get("task_id")
-    if not task_id:
-        raise RuntimeError("No task_id returned from Ace Step API")
-
-    for _ in range(75):
-        stat_res = requests.get(
-            f"https://api.piapi.ai/api/v1/task/{task_id}",
-            headers=headers,
-            timeout=60,
-        )
-        stat_res.raise_for_status()
-        stat_data = stat_res.json()
-        status = stat_data.get("data", {}).get("status") or stat_data.get("status")
-        if status == "completed":
-            audio_url = (
-                stat_data.get("data", {})
-                .get("output", {})
-                .get("audio_url")
+            res = requests.post(
+                "https://api.piapi.ai/api/v1/task",
+                json=payload,
+                headers=headers,
+                timeout=120,
             )
-            if not audio_url:
-                raise RuntimeError("No audio URL found in completed task")
-            wav_res = requests.get(audio_url, timeout=120)
-            wav_res.raise_for_status()
-            audio_path = out_dir / "audio.wav"
-            audio_path.write_bytes(wav_res.content)
-            return str(audio_path)
-        if status in {"failed", "error"}:
-            raise RuntimeError(f"Ace Step task failed: {status}")
-        time.sleep(5)
-    raise TimeoutError("Ace Step API timed out")
+            res.raise_for_status()
+            resp_data = res.json()
+            task_id = resp_data.get("data", {}).get("task_id") or resp_data.get("task_id")
+            if not task_id:
+                raise RuntimeError("No task_id returned from Ace Step API")
+
+            for _ in range(75):
+                stat_res = requests.get(
+                    f"https://api.piapi.ai/api/v1/task/{task_id}",
+                    headers=headers,
+                    timeout=60,
+                )
+                stat_res.raise_for_status()
+                stat_data = stat_res.json()
+                status = stat_data.get("data", {}).get("status") or stat_data.get("status")
+                if status == "completed":
+                    audio_url = (
+                        stat_data.get("data", {})
+                        .get("output", {})
+                        .get("audio_url")
+                    )
+                    if not audio_url:
+                        raise RuntimeError("No audio URL found in completed task")
+                    wav_res = requests.get(audio_url, timeout=120)
+                    wav_res.raise_for_status()
+                    audio_path = out_dir / "audio.wav"
+                    audio_path.write_bytes(wav_res.content)
+                    return str(audio_path)
+                if status in {"failed", "error"}:
+                    raise RuntimeError(f"Ace Step task failed: {status}")
+                time.sleep(5)
+            raise TimeoutError("Ace Step API timed out")
+        except Exception as e:
+            if attempt < retries:
+                print(f"Ace Step attempt {attempt + 1} failed: {e}; retrying...")
+                attempt += 1
+                time.sleep(1)
+            else:
+                print(f"Ace Step failed after {retries + 1} attempts: {e}; using fallback audio")
+                mock_wav_path = Path(__file__).parent / "mock_data" / "mock_audio.wav"
+                fake_wav = out_dir / "audio.wav"
+                shutil.copy(mock_wav_path, fake_wav)
+                return str(fake_wav)
