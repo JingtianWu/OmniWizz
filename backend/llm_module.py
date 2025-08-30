@@ -57,7 +57,7 @@ class LLMProcessor:
                      "Here is an example of how to describe an image musically and generate lyrics. "
                      "The lyrics should be timestamped in the format [MM:SS.xx], and the timestamps should be chosen "
                      "to match the pacing and emotion of the scene.\n\n"
-                     "**Music Prompt:**\nEpic fantasy orchestra, slow build-up, thunderstorm ambience, Celtic flute melody\n\n"
+                     "**Style Prompt:**\nEpic fantasy orchestra, slow build-up, thunderstorm ambience, Celtic flute melody\n\n"
                      "**Lyrics:**\n"
                      "Your shadow dances on the dashboard shrine\n"
                      "Neon ghosts in gasoline rain\n"
@@ -68,7 +68,7 @@ class LLMProcessor:
                      "Follow the same format as the example."},
                     {"type": "image", "image": self.image_path},
                     {"type": "text", "text":
-                     "Start with the **Music Prompt**, then write **Lyrics**. "
+                     "Start with the **Style Prompt**, then write **Lyrics**. "
                      "Ensure the lyrics are at least 12 lines long, written only in English, and maintain a consistent emotional tone."}
                 ],
             }]

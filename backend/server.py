@@ -24,7 +24,7 @@ from pipeline import (
     generate_tags_from_image,
     generate_images_from_image,
 )
-from udio_module import run_inference
+from ace_step_module import run_inference
 
 import os
 from dotenv import load_dotenv
@@ -189,8 +189,8 @@ async def regenerate(
     if lrc_fp.exists():
         lrc_fp.unlink()
     
-    assistant_reply = f"**Music Prompt:** {prompt}\n\n**Lyrics:**\n{lyrics}"
-    background_tasks.add_task(run_inference, assistant_reply, out_dir)
+    assistant_reply = f"**Style Prompt:** {prompt}\n\n**Lyrics:**\n{lyrics}"
+    background_tasks.add_task(run_inference, assistant_reply, out_dir, audio_path=None)
 
     log_event(
         db,
