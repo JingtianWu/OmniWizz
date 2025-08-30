@@ -1,8 +1,11 @@
 import re
 import shutil
 import time
+import base64
+import mimetypes
 import requests
 from pathlib import Path
+
 from config import TEST_MODE, PIAPI_KEY
 
 def extract_prompt_and_lyrics(output, lang="en"):
@@ -56,9 +59,23 @@ def extract_prompt_and_lyrics(output, lang="en"):
     return prompt, lyrics
 
 
-def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_MODE) -> str:
+def _to_data_url(path: str) -> str:
+    """Encode a local audio file as a data URL."""
+    mime, _ = mimetypes.guess_type(path)
+    with open(path, "rb") as f:
+        b64 = base64.b64encode(f.read()).decode()
+    return f"data:{mime or 'audio/wav'};base64,{b64}"
+
+
+def run_inference(
+    assistant_reply: str,
+    out_dir: Path,
+    style_audio_path: str | None = None,
+    *,
+    use_mock: bool = TEST_MODE,
+) -> str:
     """
-    Generate music using the Udio model via PiAPI.
+    Generate music using the Ace Step model via PiAPI.
 
     Writes ``lyrics.lrc`` (plain text) and ``audio.wav`` into ``out_dir`` and
     returns the path to the audio file.
@@ -77,14 +94,19 @@ def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_
     prompt, lyrics = extract_prompt_and_lyrics(assistant_reply)
     (out_dir / "lyrics.lrc").write_text(lyrics, encoding="utf-8")
 
+    input_payload = {
+        "style_prompt": prompt,
+        "lyrics": lyrics if lyrics.strip() else "[inst]",
+        "duration": 30,
+        "negative_style_prompt": "",
+    }
+    if style_audio_path:
+        input_payload["style_audio"] = _to_data_url(style_audio_path)
+
     payload = {
-        "model": "music-u",
-        "task_type": "generate_music",
-        "input": {
-            "prompt": prompt,
-            "lyrics_type": "user",
-            "lyrics": lyrics,
-        },
+        "model": "Qubico/ace-step",
+        "task_type": "txt2audio",
+        "input": input_payload,
         "config": {},
     }
     headers = {"X-API-Key": PIAPI_KEY}
@@ -99,7 +121,7 @@ def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_
     resp_data = res.json()
     task_id = resp_data.get("data", {}).get("task_id") or resp_data.get("task_id")
     if not task_id:
-        raise RuntimeError("No task_id returned from Udio API")
+        raise RuntimeError("No task_id returned from Ace Step API")
 
     for _ in range(75):
         stat_res = requests.get(
@@ -110,38 +132,20 @@ def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_
         stat_res.raise_for_status()
         stat_data = stat_res.json()
         status = stat_data.get("data", {}).get("status") or stat_data.get("status")
-        # print("📄 Udio poll status data:", stat_data)
         if status == "completed":
-            # NEW: Check audio inside songs[]
-            songs = stat_data.get("data", {}).get("output", {}).get("songs", [])
-            for song in songs:
-                audio_url = song.get("song_path")
-                if audio_url:
-                    wav_res = requests.get(audio_url, timeout=120)
-                    wav_res.raise_for_status()
-                    audio_path = out_dir / "audio.wav"
-                    audio_path.write_bytes(wav_res.content)
-                    return str(audio_path)
-
-            # FALLBACK: Previous formats
             audio_url = (
-                stat_data.get("data", {}).get("output", {}).get("audio_url")
-                or stat_data.get("data", {}).get("outputs", [{}])[0].get("url")
-                or stat_data.get("data", {}).get("works", [{}])[0].get("resource", {}).get("resource")
-                or stat_data.get("output", {}).get("audio_url")
-                or stat_data.get("outputs", [{}])[0].get("url")
-                or stat_data.get("works", [{}])[0].get("resource", {}).get("resource")
+                stat_data.get("data", {})
+                .get("output", {})
+                .get("audio_url")
             )
-
-            if audio_url:
-                wav_res = requests.get(audio_url, timeout=120)
-                wav_res.raise_for_status()
-                audio_path = out_dir / "audio.wav"
-                audio_path.write_bytes(wav_res.content)
-                return str(audio_path)
-
-            raise RuntimeError("No audio URL found in completed task")
+            if not audio_url:
+                raise RuntimeError("No audio URL found in completed task")
+            wav_res = requests.get(audio_url, timeout=120)
+            wav_res.raise_for_status()
+            audio_path = out_dir / "audio.wav"
+            audio_path.write_bytes(wav_res.content)
+            return str(audio_path)
         if status in {"failed", "error"}:
-            raise RuntimeError(f"Udio task failed: {status}")
+            raise RuntimeError(f"Ace Step task failed: {status}")
         time.sleep(5)
-    raise TimeoutError("Udio API timed out")
+    raise TimeoutError("Ace Step API timed out")

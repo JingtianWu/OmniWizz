@@ -1,7 +1,7 @@
 import requests
 import re
 import ast
-from udio_module import extract_prompt_and_lyrics
+from ace_step_module import extract_prompt_and_lyrics
 from config import TEST_MODE, OPENAI_API_KEY
 import base64
 import mimetypes
