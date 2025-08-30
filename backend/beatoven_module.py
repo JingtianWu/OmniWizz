@@ -74,6 +74,9 @@ def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_
         return str(fake_wav)
 
     # ==== REAL MODE ====
+    if not BEATOVEN_API_KEY:
+        raise RuntimeError("BEATOVEN_API_KEY not set")
+
     prompt, lyrics = extract_prompt_and_lyrics(assistant_reply)
     (out_dir / "lyrics.lrc").write_text(lyrics, encoding="utf-8")
 
@@ -84,7 +87,7 @@ def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_
     }
     headers = {
         "Authorization": f"Bearer {BEATOVEN_API_KEY}",
-        "content-type": "application/json",
+        "Content-Type": "application/json",
     }
 
     res = requests.post(
@@ -93,6 +96,8 @@ def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_
         headers=headers,
         timeout=120,
     )
+    if res.status_code == 401:
+        raise RuntimeError("Unauthorized: check BEATOVEN_API_KEY")
     res.raise_for_status()
     resp_data = res.json()
     task_id = resp_data.get("task_id")
@@ -105,6 +110,8 @@ def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_
             headers=headers,
             timeout=60,
         )
+        if stat_res.status_code == 401:
+            raise RuntimeError("Unauthorized: check BEATOVEN_API_KEY")
         stat_res.raise_for_status()
         stat_data = stat_res.json()
         status = stat_data.get("status")

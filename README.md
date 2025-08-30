@@ -49,7 +49,7 @@ omniwizz/
    pip install -r requirements.txt
    ```
 
-  Set the `OPENAI_API_KEY`, `Beatoven_API_KEY`, `SERPAPI_API_KEY`, and `MUSIC_AI_API_KEY` environment variables
+  Set the `OPENAI_API_KEY`, `BEATOVEN_API_KEY`, `SERPAPI_API_KEY`, and `MUSIC_AI_API_KEY` environment variables
   before running the backend in production mode. The chord transcription workflow can be
   configured via the optional `MUSICAI_CHORD_WORKFLOW` variable.
   The backend uses
