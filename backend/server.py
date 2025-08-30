@@ -24,7 +24,7 @@ from pipeline import (
     generate_tags_from_image,
     generate_images_from_image,
 )
-from udio_module import run_inference
+from musicgpt_module import run_inference
 
 import os
 from dotenv import load_dotenv

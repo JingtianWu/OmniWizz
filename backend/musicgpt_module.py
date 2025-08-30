@@ -1,9 +1,14 @@
 import re
 import shutil
 import time
-import requests
 from pathlib import Path
-from config import TEST_MODE, PIAPI_KEY
+
+import requests
+
+from config import TEST_MODE, MUSICGPT_API_KEY
+
+API_BASE = "https://api.musicgpt.com/api/public/v1"
+
 
 def extract_prompt_and_lyrics(output, lang="en"):
     """Return (prompt, lyrics) parsed from raw model output."""
@@ -36,7 +41,7 @@ def extract_prompt_and_lyrics(output, lang="en"):
     for pat in p_pats:
         m = re.search(pat, output, re.IGNORECASE | re.DOTALL)
         if m:
-            prompt = re.sub(r'\*{1,3}', '', m.group(1)).strip()
+            prompt = re.sub(r"\*{1,3}", "", m.group(1)).strip()
             break
 
     # Try to extract the lyrics
@@ -51,14 +56,13 @@ def extract_prompt_and_lyrics(output, lang="en"):
         lines = output.strip().splitlines()
         if lines:
             prompt = lines[0].split(":", 1)[-1].strip().lstrip("*- ")
-            prompt = re.sub(r'\*{1,3}', '', prompt).strip()
+            prompt = re.sub(r"\*{1,3}", "", prompt).strip()
 
     return prompt, lyrics
 
 
 def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_MODE) -> str:
-    """
-    Generate music using the Udio model via PiAPI.
+    """Generate music using the MusicGPT API.
 
     Writes ``lyrics.lrc`` (plain text) and ``audio.wav`` into ``out_dir`` and
     returns the path to the audio file.
@@ -67,7 +71,6 @@ def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_
         # ==== MOCK MODE ====
         prompt, lyrics = extract_prompt_and_lyrics(assistant_reply)
         (out_dir / "lyrics.lrc").write_text(lyrics, encoding="utf-8")
-
         mock_wav_path = Path(__file__).parent / "mock_data" / "mock_audio.wav"
         fake_wav = out_dir / "audio.wav"
         shutil.copy(mock_wav_path, fake_wav)
@@ -77,71 +80,55 @@ def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_
     prompt, lyrics = extract_prompt_and_lyrics(assistant_reply)
     (out_dir / "lyrics.lrc").write_text(lyrics, encoding="utf-8")
 
+    if not MUSICGPT_API_KEY:
+        raise RuntimeError("MUSICGPT_API_KEY not set")
+
     payload = {
-        "model": "music-u",
-        "task_type": "generate_music",
-        "input": {
-            "prompt": prompt,
-            "lyrics_type": "user",
-            "lyrics": lyrics,
-        },
-        "config": {},
+        "prompt": prompt,
+        "lyrics": lyrics,
     }
-    headers = {"X-API-Key": PIAPI_KEY}
+    headers = {
+        "Authorization": MUSICGPT_API_KEY,
+        "Content-Type": "application/json",
+    }
 
     res = requests.post(
-        "https://api.piapi.ai/api/v1/task",
+        f"{API_BASE}/MusicAI",
         json=payload,
         headers=headers,
         timeout=120,
     )
     res.raise_for_status()
-    resp_data = res.json()
-    task_id = resp_data.get("data", {}).get("task_id") or resp_data.get("task_id")
-    if not task_id:
-        raise RuntimeError("No task_id returned from Udio API")
+    data = res.json()
+    conv_id = data.get("conversion_id_1") or data.get("conversion_id")
+    if not conv_id:
+        raise RuntimeError("No conversion id returned from MusicGPT API")
 
+    # Poll for completion
     for _ in range(75):
-        stat_res = requests.get(
-            f"https://api.piapi.ai/api/v1/task/{task_id}",
+        poll = requests.get(
+            f"{API_BASE}/conversion/{conv_id}",
             headers=headers,
             timeout=60,
         )
-        stat_res.raise_for_status()
-        stat_data = stat_res.json()
-        status = stat_data.get("data", {}).get("status") or stat_data.get("status")
-        # print("📄 Udio poll status data:", stat_data)
-        if status == "completed":
-            # NEW: Check audio inside songs[]
-            songs = stat_data.get("data", {}).get("output", {}).get("songs", [])
-            for song in songs:
-                audio_url = song.get("song_path")
-                if audio_url:
-                    wav_res = requests.get(audio_url, timeout=120)
-                    wav_res.raise_for_status()
-                    audio_path = out_dir / "audio.wav"
-                    audio_path.write_bytes(wav_res.content)
-                    return str(audio_path)
-
-            # FALLBACK: Previous formats
+        poll.raise_for_status()
+        poll_data = poll.json()
+        status = poll_data.get("status") or poll_data.get("data", {}).get("status")
+        if status in {"completed", "succeeded", "success", True}:
             audio_url = (
-                stat_data.get("data", {}).get("output", {}).get("audio_url")
-                or stat_data.get("data", {}).get("outputs", [{}])[0].get("url")
-                or stat_data.get("data", {}).get("works", [{}])[0].get("resource", {}).get("resource")
-                or stat_data.get("output", {}).get("audio_url")
-                or stat_data.get("outputs", [{}])[0].get("url")
-                or stat_data.get("works", [{}])[0].get("resource", {}).get("resource")
+                poll_data.get("conversion_path")
+                or poll_data.get("audio_url")
+                or poll_data.get("data", {}).get("conversion_path")
+                or poll_data.get("data", {}).get("audio_url")
             )
-
             if audio_url:
                 wav_res = requests.get(audio_url, timeout=120)
                 wav_res.raise_for_status()
                 audio_path = out_dir / "audio.wav"
                 audio_path.write_bytes(wav_res.content)
                 return str(audio_path)
-
             raise RuntimeError("No audio URL found in completed task")
         if status in {"failed", "error"}:
-            raise RuntimeError(f"Udio task failed: {status}")
+            raise RuntimeError(f"MusicGPT task failed: {status}")
         time.sleep(5)
-    raise TimeoutError("Udio API timed out")
+    raise TimeoutError("MusicGPT API timed out")
