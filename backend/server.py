@@ -24,7 +24,8 @@ from pipeline import (
     generate_tags_from_image,
     generate_images_from_image,
 )
-from udio_module import run_inference
+from diffrhythm_module import run_inference as run_diffrhythm
+from udio_module import run_inference as run_udio
 
 import os
 from dotenv import load_dotenv
@@ -76,6 +77,18 @@ def root(request: Request):
 UPLOAD_DIR = Path(__file__).parent / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
 OUTPUT_DIR = Path(__file__).parent.parent / "output"
+
+
+def run_inference_with_fallback(assistant_reply, out_dir):
+    try:
+        run_diffrhythm(assistant_reply, out_dir)
+    except Exception as e:
+        print(f"DiffRhythm failed: {e}; trying Udio")
+        try:
+            run_udio(assistant_reply, out_dir)
+        except Exception as e2:
+            print(f"Udio failed: {e2}; using mock audio")
+            run_udio(assistant_reply, out_dir, use_mock=True)
 
 
 @app.post("/generate")
@@ -190,7 +203,7 @@ async def regenerate(
         lrc_fp.unlink()
     
     assistant_reply = f"**Music Prompt:** {prompt}\n\n**Lyrics:**\n{lyrics}"
-    background_tasks.add_task(run_inference, assistant_reply, out_dir)
+    background_tasks.add_task(run_inference_with_fallback, assistant_reply, out_dir)
 
     log_event(
         db,
