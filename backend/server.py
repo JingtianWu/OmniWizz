@@ -190,7 +190,11 @@ async def regenerate(
         lrc_fp.unlink()
     
     assistant_reply = f"**Style Prompt:** {prompt}\n\n**Lyrics:**\n{lyrics}"
-    background_tasks.add_task(run_inference, assistant_reply, out_dir, audio_path=None)
+    src_audio = None
+    for p in out_dir.glob("source_audio.*"):
+        src_audio = str(p)
+        break
+    background_tasks.add_task(run_inference, assistant_reply, out_dir, audio_path=src_audio)
 
     log_event(
         db,

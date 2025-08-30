@@ -37,9 +37,13 @@ def generate_music_from_image(
     shutil.copy2(image_path, out_dir / Path(image_path).name)
 
     chords = None
+    audio_for_inference = None
     if audio_path:
+        audio_src = out_dir / f"source_audio{Path(audio_path).suffix}"
+        shutil.copy2(audio_path, audio_src)
+        audio_for_inference = str(audio_src)
         try:
-            chords = transcribe_chords(audio_path)
+            chords = transcribe_chords(audio_for_inference)
             with open(out_dir / "chords.json", "w", encoding="utf-8") as f:
                 json.dump(chords, f, ensure_ascii=False, indent=2)
         except Exception as e:
@@ -74,11 +78,13 @@ def generate_music_from_image(
 
     # 5) Inference (or mock)
     try:
-        generated_audio = run_inference(assistant_reply, out_dir, audio_path=audio_path)
+        generated_audio = run_inference(
+            assistant_reply, out_dir, audio_path=audio_for_inference
+        )
     except Exception as e:
         print(f"Ace Step failed: {e}; using mock audio")
         generated_audio = run_inference(
-            assistant_reply, out_dir, audio_path=audio_path, use_mock=True
+            assistant_reply, out_dir, audio_path=audio_for_inference, use_mock=True
         )
     return generated_audio
 
