@@ -2,7 +2,6 @@ import re
 import shutil
 import time
 import base64
-import mimetypes
 import requests
 from pathlib import Path
 from config import TEST_MODE, PIAPI_KEY
@@ -86,12 +85,11 @@ def run_inference(
     if audio_path:
         with open(audio_path, "rb") as f:
             b64_audio = base64.b64encode(f.read()).decode()
-        mime = mimetypes.guess_type(audio_path)[0] or "audio/wav"
-        data_url = f"data:{mime};base64,{b64_audio}"
         task_type = "audio2audio"
         input_payload = {
-            "style_audio": data_url,
+            "style_audio": b64_audio,
             "style_prompt": prompt,
+            "negative_style_prompt": "",
             "lyrics": lyrics or "[inst]",
         }
     else:
