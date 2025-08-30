@@ -12,3 +12,4 @@ PIAPI_KEY = os.getenv("PIAPI_KEY", "")                  # Udio cloud inference
 SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY", "")      # SerpAPI for image search
 MUSIC_AI_API_KEY = os.getenv("MUSIC_AI_API_KEY", "")    # Music AI chord transcription
 MUSICAI_CHORD_WORKFLOW = os.getenv("MUSICAI_CHORD_WORKFLOW", "untitled-workflow-1fe2713")
+MUSICGPT_API_KEY = os.getenv("MUSICGPT_API_KEY", "")     # MusicGPT generation

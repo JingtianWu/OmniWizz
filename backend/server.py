@@ -24,7 +24,7 @@ from pipeline import (
     generate_tags_from_image,
     generate_images_from_image,
 )
-from udio_module import run_inference
+from audio_generation import generate_audio
 
 import os
 from dotenv import load_dotenv
@@ -190,7 +190,7 @@ async def regenerate(
         lrc_fp.unlink()
     
     assistant_reply = f"**Music Prompt:** {prompt}\n\n**Lyrics:**\n{lyrics}"
-    background_tasks.add_task(run_inference, assistant_reply, out_dir)
+    background_tasks.add_task(generate_audio, assistant_reply, out_dir)
 
     log_event(
         db,
