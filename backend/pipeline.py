@@ -75,6 +75,9 @@ def generate_music_from_image(
     # 5) Inference (or mock)
     try:
         audio_path = run_inference(assistant_reply, out_dir)
+    except TimeoutError as e:
+        print(f"MusicGPT timed out: {e}; using mock audio")
+        audio_path = run_inference(assistant_reply, out_dir, use_mock=True)
     except Exception as e:
         print(f"MusicGPT failed: {e}; using mock audio")
         audio_path = run_inference(assistant_reply, out_dir, use_mock=True)

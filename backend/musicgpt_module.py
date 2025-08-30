@@ -4,6 +4,7 @@ import time
 from pathlib import Path
 
 import requests
+from requests import RequestException
 
 from config import TEST_MODE, MUSICGPT_API_KEY
 
@@ -92,13 +93,23 @@ def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_
         "Content-Type": "application/json",
     }
 
-    res = requests.post(
-        f"{API_BASE}/MusicAI",
-        json=payload,
-        headers=headers,
-        timeout=120,
-    )
-    res.raise_for_status()
+    try:
+        res = requests.post(
+            f"{API_BASE}/MusicAI",
+            json=payload,
+            headers=headers,
+            timeout=120,
+        )
+    except RequestException as e:
+        raise RuntimeError(f"MusicGPT request failed: {e}") from e
+    if res.status_code == 429:
+        raise RuntimeError("MusicGPT rate limit exceeded")
+    if res.status_code >= 400:
+        try:
+            err = res.json().get("error") or res.text
+        except Exception:
+            err = res.text
+        raise RuntimeError(f"MusicGPT API error {res.status_code}: {err}")
     data = res.json()
     if not data.get("success", True):
         raise RuntimeError(data.get("error") or data.get("message") or "MusicGPT API error")
@@ -108,15 +119,26 @@ def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_
 
     # Poll for completion
     for _ in range(75):
-        poll = requests.get(
-            f"{API_BASE}/conversion/{conv_id}",
-            headers=headers,
-            timeout=60,
-        )
+        try:
+            poll = requests.get(
+                f"{API_BASE}/conversion/{conv_id}",
+                headers=headers,
+                timeout=60,
+            )
+        except RequestException as e:
+            raise RuntimeError(f"MusicGPT polling failed: {e}") from e
         if poll.status_code == 404:
             time.sleep(5)
             continue
-        poll.raise_for_status()
+        if poll.status_code == 429:
+            time.sleep(10)
+            continue
+        if poll.status_code >= 400:
+            try:
+                err = poll.json().get("error") or poll.text
+            except Exception:
+                err = poll.text
+            raise RuntimeError(f"MusicGPT polling error {poll.status_code}: {err}")
         poll_data = poll.json()
         if not poll_data.get("success", True):
             raise RuntimeError(
@@ -131,8 +153,14 @@ def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_
                 or poll_data.get("data", {}).get("audio_url")
             )
             if audio_url:
-                wav_res = requests.get(audio_url, timeout=120)
-                wav_res.raise_for_status()
+                try:
+                    wav_res = requests.get(audio_url, timeout=120)
+                except RequestException as e:
+                    raise RuntimeError(f"MusicGPT download failed: {e}") from e
+                if wav_res.status_code >= 400:
+                    raise RuntimeError(
+                        f"MusicGPT download error {wav_res.status_code}: {wav_res.text}"
+                    )
                 audio_path = out_dir / "audio.wav"
                 audio_path.write_bytes(wav_res.content)
                 return str(audio_path)
