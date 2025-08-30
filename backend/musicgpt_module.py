@@ -100,6 +100,8 @@ def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_
     )
     res.raise_for_status()
     data = res.json()
+    if not data.get("success", True):
+        raise RuntimeError(data.get("error") or data.get("message") or "MusicGPT API error")
     conv_id = data.get("conversion_id_1") or data.get("conversion_id")
     if not conv_id:
         raise RuntimeError("No conversion id returned from MusicGPT API")
@@ -111,8 +113,15 @@ def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_
             headers=headers,
             timeout=60,
         )
+        if poll.status_code == 404:
+            time.sleep(5)
+            continue
         poll.raise_for_status()
         poll_data = poll.json()
+        if not poll_data.get("success", True):
+            raise RuntimeError(
+                poll_data.get("error") or poll_data.get("message") or "MusicGPT polling error"
+            )
         status = poll_data.get("status") or poll_data.get("data", {}).get("status")
         if status in {"completed", "succeeded", "success", True}:
             audio_url = (
