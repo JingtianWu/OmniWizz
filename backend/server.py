@@ -84,6 +84,7 @@ async def generate(
     request: Request,
     file: UploadFile = File(...),
     audio: UploadFile | None = File(None),
+    instrumental: bool = Form(False),
     language: str = "en",
     modes: str = "music,tags,images",  # default all three
     db: DBSession = Depends(get_session),
@@ -141,6 +142,7 @@ async def generate(
                 language,
                 run_dir,
                 str(audio_path) if audio_path else None,
+                instrumental,
             )
             results["music"] = {
                 "folder": folder,
@@ -173,6 +175,7 @@ async def regenerate(
     folder: str = Form(...),
     prompt: str = Form(...),
     lyrics: str = Form(...),
+    instrumental: bool = Form(False),
     db: DBSession = Depends(get_session),
 ):
     out_dir = OUTPUT_DIR / folder
@@ -190,7 +193,9 @@ async def regenerate(
         lrc_fp.unlink()
     
     assistant_reply = f"**Music Prompt:** {prompt}\n\n**Lyrics:**\n{lyrics}"
-    background_tasks.add_task(run_inference, assistant_reply, out_dir)
+    background_tasks.add_task(
+        run_inference, assistant_reply, out_dir, instrumental=instrumental
+    )
 
     log_event(
         db,
