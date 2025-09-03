@@ -470,6 +470,26 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
     }
   };
 
+  const wrapText = (ctx, text, maxWidth) => {
+    const lines = [];
+    const paragraphs = text.split("\n");
+    paragraphs.forEach(p => {
+      let line = "";
+      const words = p.split(/\s+/);
+      words.forEach(word => {
+        const testLine = line ? line + " " + word : word;
+        if (ctx.measureText(testLine).width > maxWidth && line) {
+          lines.push(line);
+          line = word;
+        } else {
+          line = testLine;
+        }
+      });
+      lines.push(line);
+    });
+    return lines;
+  };
+
   /* -------------- Export -------------- */
   const generate = () => {
     const fullH = H + (hasWave?AUDIO_H:0);
@@ -482,9 +502,22 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
       const el=document.getElementById(`tb-${b.id}`); if(!el) return;
       const pr=contRef.current.getBoundingClientRect();
       const r = el.getBoundingClientRect();
-      const x=r.left-pr.left, y=r.top-pr.top+parseInt(el.style.fontSize||b.fs,10);
-      oc.font=`${parseInt(el.style.fontSize||b.fs,10)}px Arial`; oc.fillStyle=b.color;
-      oc.fillText(el.innerText,x,y);
+      const style = window.getComputedStyle(el);
+      const padL = parseFloat(style.paddingLeft);
+      const padT = parseFloat(style.paddingTop);
+      const padR = parseFloat(style.paddingRight);
+      const fontSize = parseInt(style.fontSize || b.fs, 10);
+      const lineHeight = parseFloat(style.lineHeight || fontSize * 1.2);
+      const x=r.left-pr.left+padL;
+      const y=r.top-pr.top+padT;
+      const maxW = (b.width || r.width) - padL - padR;
+      oc.font=`${fontSize}px Arial`;
+      oc.fillStyle=b.color;
+      oc.textBaseline = 'top';
+      const lines = wrapText(oc, el.innerText, maxW);
+      lines.forEach((ln, i)=>{
+        oc.fillText(ln, x, y + i*lineHeight);
+      });
     });
     if(hasWave) oc.drawImage(audRef.current,0,H);
     off.toBlob(blob=>onSubmit(new File([blob],"canvas.jpg",{type:"image/jpeg"})),"image/jpeg",0.92);
