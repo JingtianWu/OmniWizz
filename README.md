@@ -6,7 +6,7 @@
 
 
 ## Features
-- **Image → Music** via Udio (PiAPI) and GPT-4.1-mini lyrics
+- **Image → Music** via DiffRhythm (PiAPI) with Udio fallback and GPT-4.1 lyrics
 - **Optional audio upload analyzed with Music AI for key & chord progression**
 - **Image → Tags** for creativity prompts
 - **Image → Related Images** via SerpAPI (`SERPAPI_API_KEY` required)

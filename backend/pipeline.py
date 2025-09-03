@@ -12,7 +12,8 @@ from llm_processors import (
     ImageToTagsProcessor,
     ImageToVisualEntitiesProcessor,
 )
-from udio_module import run_inference
+from diffrhythm_module import run_inference as run_diffrhythm
+from udio_module import run_inference as run_udio
 from serpapi_module import fetch_images_for_entity
 
 OUTPUT_ROOT = Path(__file__).parent.parent / "output"
@@ -72,12 +73,16 @@ def generate_music_from_image(
     # 4) Assemble assistant reply for Udio
     assistant_reply = f"**Music Prompt:** {prompt}\n\n**Lyrics:**\n{lyrics}"
 
-    # 5) Inference (or mock)
+    # 5) Inference with fallback
     try:
-        audio_path = run_inference(assistant_reply, out_dir)
+        audio_path = run_diffrhythm(assistant_reply, out_dir)
     except Exception as e:
-        print(f"Udio failed: {e}; using mock audio")
-        audio_path = run_inference(assistant_reply, out_dir, use_mock=True)
+        print(f"DiffRhythm failed: {e}; trying Udio")
+        try:
+            audio_path = run_udio(assistant_reply, out_dir)
+        except Exception as e2:
+            print(f"Udio failed: {e2}; using mock audio")
+            audio_path = run_udio(assistant_reply, out_dir, use_mock=True)
     return audio_path
 
 
