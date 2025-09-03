@@ -13,7 +13,7 @@ from llm_processors import (
     ImageToVisualEntitiesProcessor,
 )
 from udio_module import run_inference
-from serpapi_module import fetch_images_for_entity
+from nano_banana_module import fetch_images_for_entity
 
 OUTPUT_ROOT = Path(__file__).parent.parent / "output"
 

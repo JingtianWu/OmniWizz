@@ -9,7 +9,7 @@
 - **Image → Music** via Udio (PiAPI) and GPT-4.1-mini lyrics
 - **Optional audio upload analyzed with Music AI for key & chord progression**
 - **Image → Tags** for creativity prompts
-- **Image → Related Images** via SerpAPI (`SERPAPI_API_KEY` required)
+- **Image → Related Images** via Nano Banana Gemini (`NANO_BANANA_API_KEY` required)
 - POST `/generate` triggers selected pipelines via `modes` and `language` params
 - `/regenerate` re-runs music synthesis with your own prompt and lyrics
 - Toggle `TEST_MODE` (via environment variable or in `backend/config.py`) for offline demos.
@@ -25,7 +25,7 @@ omniwizz/
 ├── backend/                 
 │   ├── llm_module.py        ← optional Qwen2.5-VL helper
 │   ├── llm_processors.py    ← OpenAI-based processors
-│   ├── serpapi_module.py    ← related image search via SerpAPI
+│   ├── nano_banana_module.py    ← related image generation via Gemini
 │   ├── udio_module.py       ← generate music with Udio
 │   ├── pipeline.py          ← core logic: routes inputs through modules
 │   └── server.py            ← FastAPI endpoints (`/generate`, `/regenerate`)
@@ -49,7 +49,7 @@ omniwizz/
    pip install -r requirements.txt
    ```
 
-  Set the `OPENAI_API_KEY`, `PIAPI_KEY`, `SERPAPI_API_KEY`, and `MUSIC_AI_API_KEY` environment variables
+   Set the `OPENAI_API_KEY`, `PIAPI_KEY`, `NANO_BANANA_API_KEY`, and `MUSIC_AI_API_KEY` environment variables
   before running the backend in production mode. The chord transcription workflow can be
   configured via the optional `MUSICAI_CHORD_WORKFLOW` variable.
   The backend uses

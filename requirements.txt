@@ -29,3 +29,4 @@ uvicorn
 requests
 python-dotenv
 sqlmodel
+google-genai
