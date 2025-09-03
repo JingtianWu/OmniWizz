@@ -131,14 +131,15 @@ def generate_images_from_image(
         all_paths = [str(p) for p in image_dir.glob("*.*")]
         return entities, out_dir, all_paths
 
-    # 3) REAL: generate per entity
+    # 3) REAL: generate for the first entity only to conserve API quota
     all_paths = []
-    for ent in entities:
+    first = entities[0] if entities else None
+    if first:
         try:
-            imgs = generate_images_for_entity(ent, num=per_entity, out_dir=image_dir)
+            imgs = generate_images_for_entity(first, num=1, out_dir=image_dir)
             all_paths.extend(imgs)
         except Exception as e:
-            print(f"Image generation failed for {ent}: {e}")
+            print(f"Image generation failed for {first}: {e}")
 
     if not all_paths:
         print("No images generated; using mock images")
