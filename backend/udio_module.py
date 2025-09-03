@@ -56,9 +56,17 @@ def extract_prompt_and_lyrics(output, lang="en"):
     return prompt, lyrics
 
 
-def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_MODE) -> str:
-    """
-    Generate music using the Udio model via PiAPI.
+def run_inference(
+    assistant_reply: str,
+    out_dir: Path,
+    *,
+    use_mock: bool = TEST_MODE,
+    instrumental: bool = False,
+) -> str:
+    """Generate music using the Udio model via PiAPI.
+
+    When ``instrumental`` is True, the request is sent with
+    ``lyrics_type='instrumental'`` and no lyrics are included in the payload.
 
     Writes ``lyrics.lrc`` (plain text) and ``audio.wav`` into ``out_dir`` and
     returns the path to the audio file.
@@ -66,6 +74,8 @@ def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_
     if use_mock:
         # ==== MOCK MODE ====
         prompt, lyrics = extract_prompt_and_lyrics(assistant_reply)
+        if instrumental:
+            lyrics = ""
         (out_dir / "lyrics.lrc").write_text(lyrics, encoding="utf-8")
 
         mock_wav_path = Path(__file__).parent / "mock_data" / "mock_audio.wav"
@@ -75,16 +85,21 @@ def run_inference(assistant_reply: str, out_dir: Path, *, use_mock: bool = TEST_
 
     # ==== REAL MODE ====
     prompt, lyrics = extract_prompt_and_lyrics(assistant_reply)
+    if instrumental:
+        lyrics = ""
     (out_dir / "lyrics.lrc").write_text(lyrics, encoding="utf-8")
+
+    payload_input = {
+        "prompt": prompt,
+        "lyrics_type": "instrumental" if instrumental else "user",
+    }
+    if not instrumental:
+        payload_input["lyrics"] = lyrics
 
     payload = {
         "model": "music-u",
         "task_type": "generate_music",
-        "input": {
-            "prompt": prompt,
-            "lyrics_type": "user",
-            "lyrics": lyrics,
-        },
+        "input": payload_input,
         "config": {},
     }
     headers = {"X-API-Key": PIAPI_KEY}

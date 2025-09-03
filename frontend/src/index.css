@@ -826,6 +826,26 @@ html { scroll-behavior: smooth; }
   opacity: 0.7;
 }
 
+/* Instrumental toggle button */
+.instrumental-btn {
+  align-self: flex-end;
+  margin-bottom: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.instrumental-btn.active {
+  background: rgba(255,255,255,0.25);
+}
+.instrumental-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Generate button */
 .prompt-box .generate-btn {
   background: linear-gradient(135deg, #667eea, #764ba2, #f093fb);

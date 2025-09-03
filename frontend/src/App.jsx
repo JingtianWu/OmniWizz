@@ -46,6 +46,7 @@ export default function App() {
   const [doTags, setDoTags]     = useState(true);
   const [doMusic, setDoMusic]   = useState(true);
   const [doImages, setDoImages] = useState(true);
+  const [instrumental, setInstrumental] = useState(false);
 
   /* Language */
   const [language, setLanguage] = useState("en");
@@ -172,6 +173,7 @@ export default function App() {
     const v = e.target.checked;
     if (!v && !doTags && !doImages) return;
     setDoMusic(v);
+    if (!v) setInstrumental(false);
     log("toggle_music", { value: v });
   };
   const onImagesToggle = e => {
@@ -179,6 +181,11 @@ export default function App() {
     if (!v && !doTags && !doMusic) return;
     setDoImages(v);
     log("toggle_images", { value: v });
+  };
+  const onInstrumentalToggle = e => {
+    const v = e.target.checked;
+    setInstrumental(v);
+    log("toggle_instrumental", { value: v });
   };
 
   /* File upload + generate */
@@ -209,6 +216,7 @@ export default function App() {
     const data = new FormData();
     data.append("file", file);
     if (audioFile) data.append("audio", audioFile);
+    data.append("instrumental", instrumental ? "1" : "0");
     const modes = [doMusic && "music", doTags && "tags", doImages && "images"]
       .filter(Boolean)
       .join(",");
@@ -230,12 +238,9 @@ export default function App() {
         setPendingMusic(!!j.music.pending);
         setRunFolder(j.music.folder || "");
         setPendingPrompt(true);
-        setPendingLyrics(true);
+        setPendingLyrics(!instrumental);
         try {
-          const [prResp, lyrResp] = await Promise.all([
-            fetch(withBase(j.music.prompt_url)),
-            fetch(withBase(j.music.lyrics_url))
-          ]);
+          const prResp = await fetch(withBase(j.music.prompt_url));
           if (prResp.ok) {
             const txt = await prResp.text();
             origPromptRef.current = txt;
@@ -243,12 +248,15 @@ export default function App() {
             setPromptText(txt);
             setPendingPrompt(false);
           }
-          if (lyrResp.ok) {
-            const lyr = await lyrResp.text();
-            origLyricsRef.current = lyr;
-            lyricsModifiedRef.current = false;
-            setLyricsText(lyr);
-            setPendingLyrics(false);
+          if (!instrumental) {
+            const lyrResp = await fetch(withBase(j.music.lyrics_url));
+            if (lyrResp.ok) {
+              const lyr = await lyrResp.text();
+              origLyricsRef.current = lyr;
+              lyricsModifiedRef.current = false;
+              setLyricsText(lyr);
+              setPendingLyrics(false);
+            }
           }
         } catch {}
       }
@@ -315,7 +323,8 @@ export default function App() {
       const data = new FormData();
       data.append("folder", runFolder);
       data.append("prompt", promptText);
-      data.append("lyrics", lyricsText);
+      data.append("lyrics", instrumental ? "" : lyricsText);
+      data.append("instrumental", instrumental ? "1" : "0");
       const res = await fetch(`${BACKEND_URL}/regenerate`, { method: "POST", body: data });
       const j = await res.json();
       if (j.audio_url) {
@@ -450,7 +459,7 @@ export default function App() {
   const cx       = 100 + R * Math.cos(theta);
   const cy       = 100 + R * Math.sin(theta);
   const promptDisabled  = !doMusic || pendingPrompt;
-  const lyricsDisabled  = !doMusic || pendingLyrics;
+  const lyricsDisabled  = instrumental || !doMusic || pendingLyrics;
   const regenDisabled   = !doMusic || regenLoading || pendingMusic;
 
   const handleDownloadAudio = async () => {
@@ -630,6 +639,15 @@ export default function App() {
               <span>Music</span>
             </label>
             <label className="option-toggle">
+              <input
+                type="checkbox"
+                checked={instrumental}
+                onChange={onInstrumentalToggle}
+                disabled={!doMusic}
+              />
+              <span>Instrumental</span>
+            </label>
+            <label className="option-toggle">
               <input type="checkbox" checked={doImages} onChange={onImagesToggle} />
               <span>Images</span>
             </label>
@@ -668,6 +686,16 @@ export default function App() {
           </div>
         )}
         <div className="prompt-box">
+          <button
+            className={`instrumental-btn ${instrumental ? "active" : ""}`}
+            onClick={() => {
+              const v = !instrumental;
+              setInstrumental(v);
+              log("toggle_instrumental", { value: v });
+            }}
+          >
+            {instrumental ? "Instrumental On" : "Instrumental Off"}
+          </button>
           <label className="prompt-field">
             <div className="prompt-label">Prompt</div>
             <textarea
@@ -715,9 +743,11 @@ export default function App() {
               placeholder={
                 !doMusic
                   ? "Music option not selected..."
-                  : pendingLyrics
-                    ? "Loading lyrics..."
-                    : "Enter lyrics (optional)"
+                  : instrumental
+                    ? "Instrumental mode: no lyrics"
+                    : pendingLyrics
+                      ? "Loading lyrics..."
+                      : "Enter lyrics (optional)"
               }
               disabled={lyricsDisabled}
               className="prompt-input lyrics-textarea"

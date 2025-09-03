@@ -31,6 +31,7 @@ def generate_music_from_image(
     language: str = "en",
     run_dir: Path = None,
     audio_path: str | None = None,
+    instrumental: bool = False,
 ) -> str:
     # 1) Prepare run_dir
     out_dir = run_dir or _make_run_dir()
@@ -74,10 +75,15 @@ def generate_music_from_image(
 
     # 5) Inference (or mock)
     try:
-        audio_path = run_inference(assistant_reply, out_dir)
+        audio_path = run_inference(assistant_reply, out_dir, instrumental=instrumental)
     except Exception as e:
         print(f"Udio failed: {e}; using mock audio")
-        audio_path = run_inference(assistant_reply, out_dir, use_mock=True)
+        audio_path = run_inference(
+            assistant_reply,
+            out_dir,
+            use_mock=True,
+            instrumental=instrumental,
+        )
     return audio_path
 
 
