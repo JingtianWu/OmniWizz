@@ -132,14 +132,25 @@ def generate_images_from_image(
         return entities, out_dir, all_paths
 
     # 3) REAL: generate for the first entity only to conserve API quota
-    all_paths = []
-    first = entities[0] if entities else None
-    if first:
-        try:
-            imgs = generate_images_for_entity(first, num=1, out_dir=image_dir)
-            all_paths.extend(imgs)
-        except Exception as e:
-            print(f"Image generation failed for {first}: {e}")
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    all_paths: list[str] = []
+    if entities:
+        max_workers = min(len(entities), 6)  # cap concurrency
+        with ThreadPoolExecutor(max_workers=max_workers) as ex:
+            futures = {
+                ex.submit(generate_images_for_entity, ent, per_entity, image_dir): ent
+                for ent in entities
+            }
+            for fut in as_completed(futures):
+                ent = futures[fut]
+                try:
+                    imgs = fut.result() or []
+                    all_paths.extend(imgs)
+                    if not imgs:
+                        print(f"Image generation returned no images for {ent}")
+                except Exception as e:
+                    print(f"Image generation failed for {ent}: {e}")
 
     if not all_paths:
         print("No images generated; using mock images")

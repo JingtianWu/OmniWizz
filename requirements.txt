@@ -30,3 +30,4 @@ requests
 python-dotenv
 sqlmodel
 google-genai
+google-generativeai

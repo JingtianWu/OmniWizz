@@ -337,7 +337,7 @@ export default function App() {
   }, [tags, groupIdx]);
 
   const visibleImages = useMemo(() => {
-    const size = 8;
+    const size = 6;
     const groups = Math.max(1, Math.ceil(images.length / size));
     const idx = groupIdx % groups;
     return images.slice(idx * size, idx * size + size);

@@ -142,10 +142,10 @@ class ImageToLyricsProcessor(BaseLLMProcessor):
                 "Neon ghosts in gasoline rain\n"
                 "I hear your laughter down the midnight train\n\n"
                 "Now, based on the following image, generate a new musical prompt and a complete set of lyrics in English only. "
-                "The output must include at least 12 lines of lyrics written entirely in English. "
+                "The output must include at least 6 lines of lyrics written entirely in English. "
                 "Follow the same format as the example, but no timestamps are needed.\n\n"
                 f"{chord_text}Start with the **Music Prompt**, then write **Lyrics**. "
-                "Ensure the lyrics are at least 12 lines long and maintain a consistent emotional tone."
+                "Ensure the lyrics are at least 6 lines long and maintain a consistent emotional tone."
             )
         else:
             if self.chords:
@@ -162,8 +162,8 @@ class ImageToLyricsProcessor(BaseLLMProcessor):
                 "街灯映出你的背影\n"
                 "我在梦中等你的回应\n\n"
                 "现在请根据下图生成新的音乐风格描述和完整歌词。"
-                "歌词必须贴合图像传达的情绪与节奏，并且不少于12行。格式需与上例一致。\n\n"
-                f"{chord_text}请以 **音乐风格：** 开始，然后生成 **歌词：**，无需时间戳，歌词不少于12行。"
+                "歌词必须贴合图像传达的情绪与节奏，并且不少于6行。格式需与上例一致。\n\n"
+                f"{chord_text}请以 **音乐风格：** 开始，然后生成 **歌词：**，无需时间戳，歌词不少于6行。"
             )
 
         messages = [{
@@ -207,11 +207,10 @@ class ImageToTagsProcessor(BaseLLMProcessor):
             content = (
                 "You are a multimodal creativity assistant for music producers.\n"
                 "Given the provided image, analyze its mood, visual features, atmosphere, and possible sonic inspirations.\n"
-                "Your task is to generate at least 24 diverse inspirational tags that combine:\n"
-                "- Visual elements (colors, scenery, light, motion, emotion)\n"
-                "- Textural impressions (surfaces, ambience, energy)\n"
-                "- Musical or production ideas (textures, instrumentation, rhythm, structure)\n\n"
-                "Do not focus only on existing genres or styles. Instead, combine abstract imagery, mood, and sonic inspiration freely to give the composer new creative directions.\n\n"
+                "Your task is to generate at least 24 diverse inspirational tags that cover:\n"
+                "- Musical ideas (genres and instrumentation suggestions)\n"
+                "- Visual elements\n"
+                "- Textural impressions\n\n"
                 "Strict formatting rules:\n"
                 "1. Output only in the following format:\n"
                 "**inspirational tags**: [\"tag1\", \"tag2\", \"tag3\", \"tag4\", \"tag5\", \"tag6\", \"tag7\", \"tag8\"]\n"
@@ -223,10 +222,9 @@ class ImageToTagsProcessor(BaseLLMProcessor):
                 "你是一名面向音乐制作人的多模态灵感助手。\n"
                 "根据提供的图像，分析其情绪、视觉特征、氛围以及可能的声音灵感。\n"
                 "请生成至少 24 个多样化的灵感标签，结合以下元素：\n"
-                "- 视觉元素（颜色、景观、光影、动态、情感）\n"
-                "- 质感印象（表面、氛围、能量感）\n"
-                "- 音乐或制作灵感（音色、乐器、节奏、结构）\n\n"
-                "不要只局限于已有风格或流派。可自由混合抽象意象、氛围和声音概念，给予制作人跳脱框架的新方向。\n\n"
+                "- 音乐灵感（音乐风格和乐器建议）\n"
+                "- 视觉元素\n"
+                "- 质感印象\n\n"
                 "严格格式要求：\n"
                 "1. 仅以以下格式输出：\n"
                 "**灵感标签**: [\"标签1\", \"标签2\", \"标签3\", \"标签4\", \"标签5\", \"标签6\", \"标签7\", \"标签8\"]\n"
@@ -339,23 +337,23 @@ class ImageToVisualEntitiesProcessor(BaseLLMProcessor):
     def _build_messages(self):
         if self.language == "en":
             prompt = (
-                "You are a multimodal creative assistant. Analyze the provided image and extract at least 24 concise keywords or short phrases describing abstract, conceptual, stylistic, or mood-related aspects of the scene. "
+                "You are a multimodal creative assistant. Analyze the provided image and extract at least 18 concise keywords or short phrases describing abstract, conceptual, stylistic, or mood-related aspects of the scene. "
                 "Focus on atmosphere, textures, colors, visual styles, artistic impressions, and emotions that could inspire creative work such as music, art, or design. "
                 "Avoid literal object names, real-world person names, celebrities, geographic names, brands, or factual labels.\n\n"
                 "Your output must strictly follow the exact format below, without any additions, explanations, or comments:\n\n"
                 '["keyword1", "keyword2", "keyword3", "keyword4", "keyword5", "keyword6", "keyword7", "keyword8"]\n\n'
                 "Now, based on the provided image, generate a new JSON array following this exact format. "
-                "The array must contain at least 24 concise keywords or short phrases reflecting the scene's visual atmosphere, textures, styles, or emotions. "
+                "The array must contain at least 18 concise keywords or short phrases reflecting the scene's visual atmosphere, textures, styles, or emotions. "
                 "Output only the JSON array in English, without any extra text."
             )
         else:
             prompt = (
-                "你是一名多模态创意助手。请分析所给图像，提取至少 24 个简洁的关键词或短语，描述图像的抽象概念、风格特点、氛围、色彩或情感，能够启发音乐、艺术或设计创作。"
+                "你是一名多模态创意助手。请分析所给图像，提取至少 18 个简洁的关键词或短语，描述图像的抽象概念、风格特点、氛围、色彩或情感，能够启发音乐、艺术或设计创作。"
                 "避免使用具体物体名称、人物姓名、地名、品牌或其他真实世界的标识。\n\n"
                 "输出必须严格遵循以下格式，且不得添加任何说明、评论或额外内容：\n\n"
                 '["关键词1", "关键词2", "关键词3", "关键词4", "关键词5", "关键词6", "关键词7", "关键词8"]\n\n'
                 "现在请根据所提供的图像，生成新的 JSON 数组，格式与示例完全一致。"
-                "数组必须包含至少 24 个简洁的关键词或短语，反映画面的视觉氛围、质感、风格或情感。"
+                "数组必须包含至少 18 个简洁的关键词或短语，反映画面的视觉氛围、质感、风格或情感。"
                 "输出仅包含 JSON 数组内容，且全部使用中文，不要添加任何额外文字。"
             )
 
