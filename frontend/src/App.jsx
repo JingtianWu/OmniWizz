@@ -102,22 +102,60 @@ export default function App() {
     ctx.drawImage(bgCanvas, 0, 0);
     ctx.drawImage(inkCanvas, 0, 0);
 
-    art.querySelectorAll(".textbox").forEach(tb => {
+    const artRect = art.getBoundingClientRect();
+
+    const drawTextbox = (targetCtx, tb) => {
       const style = window.getComputedStyle(tb);
-      const fontSize = style.fontSize;
+      const fontSize = parseFloat(style.fontSize);
       const fontFamily = style.fontFamily;
       const color = style.color;
+      const lineHeight = parseFloat(style.lineHeight) || fontSize;
 
-      const artRect = art.getBoundingClientRect();
       const tbRect = tb.getBoundingClientRect();
       const x = tbRect.left - artRect.left;
-      const y = tbRect.top - artRect.top + parseInt(fontSize, 10);
+      const y = tbRect.top - artRect.top;
+      const maxWidth = tbRect.width;
 
-      ctx.font = `${fontSize} ${fontFamily}`;
-      ctx.fillStyle = color;
-      ctx.textBaseline = "top";
-      ctx.fillText(tb.innerText, x, y);
-    });
+      targetCtx.font = `${fontSize}px ${fontFamily}`;
+      targetCtx.fillStyle = color;
+      targetCtx.textBaseline = "top";
+
+      const lines = tb.innerText.replace(/\r\n/g, "\n").split("\n");
+      let cursorY = y;
+      lines.forEach(line => {
+        if (line === "") {
+          cursorY += lineHeight;
+          return;
+        }
+        let words = line.split(" ");
+        let current = "";
+        words.forEach(word => {
+          const test = current ? `${current} ${word}` : word;
+          if (targetCtx.measureText(test).width > maxWidth && current) {
+            targetCtx.fillText(current, x, cursorY);
+            cursorY += lineHeight;
+            current = word;
+          } else {
+            current = test;
+          }
+        });
+        while (targetCtx.measureText(current).width > maxWidth) {
+          let i = current.length;
+          while (i > 0 && targetCtx.measureText(current.slice(0, i)).width > maxWidth) {
+            i--;
+          }
+          targetCtx.fillText(current.slice(0, i), x, cursorY);
+          cursorY += lineHeight;
+          current = current.slice(i);
+        }
+        if (current) {
+          targetCtx.fillText(current, x, cursorY);
+          cursorY += lineHeight;
+        }
+      });
+    };
+
+    art.querySelectorAll(".textbox").forEach(tb => drawTextbox(ctx, tb));
 
     // waveform is not drawn in the backend image
 
@@ -130,22 +168,7 @@ export default function App() {
     displayCtx.drawImage(bgCanvas, 0, 0);
     displayCtx.drawImage(inkCanvas, 0, 0);
 
-    art.querySelectorAll(".textbox").forEach(tb => {
-      const style = window.getComputedStyle(tb);
-      const fontSize = style.fontSize;
-      const fontFamily = style.fontFamily;
-      const color = style.color;
-
-      const artRect = art.getBoundingClientRect();
-      const tbRect = tb.getBoundingClientRect();
-      const x = tbRect.left - artRect.left;
-      const y = tbRect.top - artRect.top + parseInt(fontSize, 10);
-
-      displayCtx.font = `${fontSize} ${fontFamily}`;
-      displayCtx.fillStyle = color;
-      displayCtx.textBaseline = "top";
-      displayCtx.fillText(tb.innerText, x, y);
-    });
+    art.querySelectorAll(".textbox").forEach(tb => drawTextbox(displayCtx, tb));
 
     // Set canvas URL to display canvas (main part only)
     setCanvasUrl(displayCanvas.toDataURL("image/png"));
