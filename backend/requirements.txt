@@ -1,4 +1,3 @@
-Pillow
 qwen-vl-utils==0.0.8
 fastapi
 uvicorn
@@ -8,4 +7,3 @@ python-dotenv
 sqlmodel
 asyncpg
 alembic
-sqlmodel

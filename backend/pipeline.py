@@ -13,7 +13,7 @@ from llm_processors import (
     ImageToVisualEntitiesProcessor,
 )
 from udio_module import run_inference
-from serpapi_module import fetch_images_for_entity
+from openai_image_module import generate_images_for_entity
 
 OUTPUT_ROOT = Path(__file__).parent.parent / "output"
 
@@ -135,7 +135,7 @@ def generate_images_from_image(
     all_paths = []
     for ent in entities:
         try:
-            imgs = fetch_images_for_entity(ent, num=per_entity, out_dir=image_dir)
+            imgs = generate_images_for_entity(ent, num=per_entity, out_dir=image_dir)
             all_paths.extend(imgs)
         except Exception as e:
             print(f"Image fetch failed for {ent}: {e}")
