@@ -12,7 +12,7 @@ from llm_processors import (
     ImageToTagsProcessor,
     ImageToVisualEntitiesProcessor,
 )
-from udio_module import run_inference
+from ace_step_module import run_inference
 from serpapi_module import fetch_images_for_entity
 
 OUTPUT_ROOT = Path(__file__).parent.parent / "output"
@@ -37,9 +37,13 @@ def generate_music_from_image(
     shutil.copy2(image_path, out_dir / Path(image_path).name)
 
     chords = None
+    audio_for_inference = None
     if audio_path:
+        audio_src = out_dir / f"source_audio{Path(audio_path).suffix}"
+        shutil.copy2(audio_path, audio_src)
+        audio_for_inference = str(audio_src)
         try:
-            chords = transcribe_chords(audio_path)
+            chords = transcribe_chords(audio_for_inference)
             with open(out_dir / "chords.json", "w", encoding="utf-8") as f:
                 json.dump(chords, f, ensure_ascii=False, indent=2)
         except Exception as e:
@@ -69,16 +73,20 @@ def generate_music_from_image(
     with open(out_dir / "prompt.txt", "w", encoding="utf-8") as f:
         f.write(prompt)
 
-    # 4) Assemble assistant reply for Udio
-    assistant_reply = f"**Music Prompt:** {prompt}\n\n**Lyrics:**\n{lyrics}"
+    # 4) Assemble assistant reply for Ace Step
+    assistant_reply = f"**Style Prompt:** {prompt}\n\n**Lyrics:**\n{lyrics}"
 
     # 5) Inference (or mock)
     try:
-        audio_path = run_inference(assistant_reply, out_dir)
+        generated_audio = run_inference(
+            assistant_reply, out_dir, audio_path=audio_for_inference
+        )
     except Exception as e:
-        print(f"Udio failed: {e}; using mock audio")
-        audio_path = run_inference(assistant_reply, out_dir, use_mock=True)
-    return audio_path
+        print(f"Ace Step failed: {e}; using mock audio")
+        generated_audio = run_inference(
+            assistant_reply, out_dir, audio_path=audio_for_inference, use_mock=True
+        )
+    return generated_audio
 
 
 def generate_tags_from_image(

@@ -6,7 +6,7 @@
 
 
 ## Features
-- **Image → Music** via Udio (PiAPI) and GPT-4.1-mini lyrics
+- **Image → Music** via Ace Step (PiAPI) and GPT-4.1-mini lyrics
 - **Optional audio upload analyzed with Music AI for key & chord progression**
 - **Image → Tags** for creativity prompts
 - **Image → Related Images** via SerpAPI (`SERPAPI_API_KEY` required)
@@ -14,7 +14,7 @@
 - `/regenerate` re-runs music synthesis with your own prompt and lyrics
 - Toggle `TEST_MODE` (via environment variable or in `backend/config.py`) for offline demos.
   When enabled, the backend uses bundled mock data and avoids contacting the
-  GPT-4.1-mini and Udio (PiAPI) services, suitable for memory-constrained deployments.
+  GPT-4.1-mini and Ace Step (PiAPI) services, suitable for memory-constrained deployments.
 
 ---
 
@@ -26,7 +26,7 @@ omniwizz/
 │   ├── llm_module.py        ← optional Qwen2.5-VL helper
 │   ├── llm_processors.py    ← OpenAI-based processors
 │   ├── serpapi_module.py    ← related image search via SerpAPI
-│   ├── udio_module.py       ← generate music with Udio
+│   ├── ace_step_module.py   ← generate music with Ace Step
 │   ├── pipeline.py          ← core logic: routes inputs through modules
 │   └── server.py            ← FastAPI endpoints (`/generate`, `/regenerate`)
 │
@@ -55,7 +55,7 @@ omniwizz/
   The backend uses
   `python-dotenv` (included in `requirements.txt`) to load variables from a
   `.env` file if present. Set `TEST_MODE=false` in the environment to enable real API calls. When disabled,
-   the backend submits lyrics and prompts to the PiAPI Udio service via
+   the backend submits lyrics and prompts to the PiAPI Ace Step service via
    `POST https://api.piapi.ai/api/v1/task` and polls `GET /api/v1/task/{task_id}`
    until completion.
 
@@ -92,7 +92,7 @@ omniwizz/
 4. Visit `https://<username>.github.io/<repository-name>/` to access OmniWizz.
 
 
-For offline demos or memory-constrained deployments, enable `TEST_MODE` either in `backend/config.py` or via an environment variable. This skips calling the remote GPT-4.1-mini and Udio (PiAPI) services so the API and frontend can run without external dependencies.
+For offline demos or memory-constrained deployments, enable `TEST_MODE` either in `backend/config.py` or via an environment variable. This skips calling the remote GPT-4.1-mini and Ace Step (PiAPI) services so the API and frontend can run without external dependencies.
 
 ---
 

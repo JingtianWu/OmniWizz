@@ -1,7 +1,7 @@
 import requests
 import re
 import ast
-from udio_module import extract_prompt_and_lyrics
+from ace_step_module import extract_prompt_and_lyrics
 from config import TEST_MODE, OPENAI_API_KEY
 import base64
 import mimetypes
@@ -100,7 +100,7 @@ class ImageToLyricsProcessor(BaseLLMProcessor):
 
     def _mock_generate(self):
         return (
-            "**Music Prompt:** Calm piano, soft ambient pads, morning breeze, light percussion\n\n"
+            "**Style Prompt:** Calm piano, soft ambient pads, morning breeze, light percussion\n\n"
             "**Lyrics:**\n"
             "Waves gently touch the shore\n"
             "Sunrise colors fill the air\n"
@@ -125,13 +125,13 @@ class ImageToLyricsProcessor(BaseLLMProcessor):
                     "Use this progression as musical inspiration when constructing the prompt and lyrics.\n\n"
                 )
                 example_prompt = (
-                    "**Music Prompt:**\nHaunting folk ballad with fingerpicked acoustic guitar, soft pads, and a melancholic violin. "
+                    "**Style Prompt:**\nHaunting folk ballad with fingerpicked acoustic guitar, soft pads, and a melancholic violin. "
                     "Chord progression: Em - C - G - Em\n\n"
                 )
             else:
                 chord_text = ""
                 example_prompt = (
-                    "**Music Prompt:**\nEpic fantasy orchestra, slow build-up, thunderstorm ambience, Celtic flute melody\n\n"
+                    "**Style Prompt:**\nEpic fantasy orchestra, slow build-up, thunderstorm ambience, Celtic flute melody\n\n"
                 )
 
             prompt = (
@@ -144,7 +144,7 @@ class ImageToLyricsProcessor(BaseLLMProcessor):
                 "Now, based on the following image, generate a new musical prompt and a complete set of lyrics in English only. "
                 "The output must include at least 12 lines of lyrics written entirely in English. "
                 "Follow the same format as the example, but no timestamps are needed.\n\n"
-                f"{chord_text}Start with the **Music Prompt**, then write **Lyrics**. "
+                f"{chord_text}Start with the **Style Prompt**, then write **Lyrics**. "
                 "Ensure the lyrics are at least 12 lines long and maintain a consistent emotional tone."
             )
         else:
