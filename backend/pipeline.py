@@ -12,7 +12,7 @@ from llm_processors import (
     ImageToTagsProcessor,
     ImageToVisualEntitiesProcessor,
 )
-from udio_module import run_inference
+from musicgpt_module import run_inference
 from serpapi_module import fetch_images_for_entity
 
 OUTPUT_ROOT = Path(__file__).parent.parent / "output"
@@ -69,14 +69,17 @@ def generate_music_from_image(
     with open(out_dir / "prompt.txt", "w", encoding="utf-8") as f:
         f.write(prompt)
 
-    # 4) Assemble assistant reply for Udio
+    # 4) Assemble assistant reply for MusicGPT
     assistant_reply = f"**Music Prompt:** {prompt}\n\n**Lyrics:**\n{lyrics}"
 
     # 5) Inference (or mock)
     try:
         audio_path = run_inference(assistant_reply, out_dir)
+    except TimeoutError as e:
+        print(f"MusicGPT timed out: {e}; using mock audio")
+        audio_path = run_inference(assistant_reply, out_dir, use_mock=True)
     except Exception as e:
-        print(f"Udio failed: {e}; using mock audio")
+        print(f"MusicGPT failed: {e}; using mock audio")
         audio_path = run_inference(assistant_reply, out_dir, use_mock=True)
     return audio_path
 
