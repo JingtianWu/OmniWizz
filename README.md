@@ -22,8 +22,7 @@
 
 ```
 omniwizz/
-├── backend/                 
-│   ├── llm_module.py        ← optional Qwen2.5-VL helper
+├── backend/
 │   ├── llm_processors.py    ← OpenAI-based processors
 │   ├── nano_banana_module.py ← image generation via Nano Banana
 │   ├── ace_step_module.py   ← generate music with Ace Step

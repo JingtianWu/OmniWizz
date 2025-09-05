@@ -39,7 +39,7 @@ class BaseLLMProcessor:
     def _real_generate(self) -> str:
         messages = self._build_messages()
 
-        # Convert Qwen-style message format to OpenAI format
+        # Convert internal message format to OpenAI format
         oa_msgs = []
         for m in messages:
             content_items = []
