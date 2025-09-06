@@ -1,11 +1,11 @@
 # OmniWizz — Multimodal Inspirational Tool
 
-OmniWizz is a multimodal framework that accepts **text**, **images** and **audio** and can return any combination of these modalities.
+OmniWizz is a music ideation assistant that accepts multimodal inputs and returns coordinated multimodal inspirations across music, text, and images within a mood board interface to support natural creative cognition.
 
 ## Mood Board Outputs
-- **Music** — generative soundtrack built from your image’s theme
-- **Inspirational Tags** — descriptive keywords extracted from the image
-- **Inspirational Images** — complementary visuals generated from the tags
+- **Music** — AI-generated music clip based on the canvas theme
+- **Inspirational Tags** — keywords that suggest musical ideas, visual elements, and textural impressions
+- **Inspirational Images** — complementary visuals that express abstract concepts, styles, moods, and emotions to spark creativity
 
 ## Feature Pipeline
 - **Image → Text** using OpenAI `GPT-4.1` for tags and descriptions
@@ -50,7 +50,7 @@ OmniWizz/
 ```bash
 python3 -m venv omniwizz-env
 source omniwizz-env/bin/activate
-pip install -r backend/requirements.txt  # use requirements.txt for full DiffRhythm stack
+pip install -r backend/requirements.txt
 ```
 
 Set environment variables before running:
