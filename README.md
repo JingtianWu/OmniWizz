@@ -1,105 +1,112 @@
 # OmniWizz — Multimodal Inspirational Tool
 
-**OmniWizz** is a comprehensive multimodal framework—accepting **text**, **images**, and **audio** inputs and producing any combination of these outputs.
+OmniWizz is a multimodal framework that accepts **text**, **images** and **audio** and can return any combination of these modalities.
 
-> **Ultimate Goal:** Let users supply any combination of text, image, or audio as input, and receive any combination of these modalities as output, according to their creative or analytic needs.
+## Mood Board Outputs
+- **Music** — generative soundtrack built from your image’s theme
+- **Inspirational Tags** — descriptive keywords extracted from the image
+- **Inspirational Images** — complementary visuals generated from the tags
 
-
-## Features
-- **Image → Music** via Ace Step (PiAPI) and GPT-4.1-mini lyrics
-- **Optional audio upload analyzed with Music AI for key & chord progression**
-- **Image → Tags** for creativity prompts
-- **Image → Related Images** via Nano Banana (`NANO_BANANA_API_KEY` required)
-- POST `/generate` triggers selected pipelines via `modes` and `language` params
-- `/regenerate` re-runs music synthesis with your own prompt and lyrics
-- Toggle `TEST_MODE` (via environment variable or in `backend/config.py`) for offline demos.
-  When enabled, the backend uses bundled mock data and avoids contacting the
-  GPT-4.1-mini and Ace Step (PiAPI) services, suitable for memory-constrained deployments.
+## Feature Pipeline
+- **Image → Text** using OpenAI `GPT-4.1` for tags and descriptions
+- **Text → Music** via Ace Step (PiAPI) using GPT-4.1 prompts & lyrics
+- **Optional audio upload** analysed by MusicAI for key & chord progression
+- **Text → Images** through Google Gemini (Nano Banana) for inspirational images
+- POST `/generate` triggers selected pipelines via `modes` and `language`
+- `/regenerate` re-runs music synthesis with custom prompt and lyrics
+- Session and event logging stored in SQLite (`DATABASE_URL` configurable)
+- Toggle `TEST_MODE` for offline demos (bundled mock data, no external API calls)
 
 ---
 
 ## Repository Structure
 
-```
-omniwizz/
+```text
+OmniWizz/
 ├── backend/
-│   ├── llm_processors.py    ← OpenAI-based processors
-│   ├── nano_banana_module.py ← image generation via Nano Banana
-│   ├── ace_step_module.py   ← generate music with Ace Step
-│   ├── pipeline.py          ← core logic: routes inputs through modules
-│   └── server.py            ← FastAPI endpoints (`/generate`, `/regenerate`)
-│
-├── DiffRhythm/              
-│
-├── frontend/                
+│   ├── ace_step_module.py      ← music generation via PiAPI
+│   ├── llm_processors.py       ← OpenAI GPT‑4.1 image processors
+│   ├── musicai_module.py       ← optional chord transcription via MusicAI
+│   ├── nano_banana_module.py   ← inspirational images through Gemini
+│   ├── pipeline.py             ← orchestrates image→{music,tags,images}
+│   ├── server.py               ← FastAPI API (`/generate`, `/regenerate`, `/output`)
+│   ├── log_db.py               ← SQLModel session/event logging
+│   ├── dev_tools.py            ← download log database
+│   ├── requirements.txt        ← minimal backend dependencies
+│   └── tests/                  ← unit tests
+├── DiffRhythm/                 ← upstream music model (Apache 2.0)
+├── frontend/
 │   ├── public/
 │   └── src/
-│       ├── App.jsx          ← main interface (inputs → outputs, includes VinylIcon)
-│       ├── components/      ← EditorCanvas, etc.
-│       └── index.css        ← minimal styling
-│
-├── requirements.txt         
-└── README.md                
+├── docs/                       ← optional GitHub Pages build
+├── requirements.txt            ← full stack deps (incl. DiffRhythm)
+└── README.md
 ```
 
-   source omniwizz-env/bin/activate
+## Setup
 
-   # Install deps
-   pip install -r requirements.txt
-   ```
+### Backend
 
-  Set the `OPENAI_API_KEY`, `PIAPI_KEY`, `NANO_BANANA_API_KEY`, and `MUSIC_AI_API_KEY` environment variables
-  before running the backend in production mode. The chord transcription workflow can be
-  configured via the optional `MUSICAI_CHORD_WORKFLOW` variable.
-  The backend uses
-  `python-dotenv` (included in `requirements.txt`) to load variables from a
-  `.env` file if present. Set `TEST_MODE=false` in the environment to enable real API calls. When disabled,
-   the backend submits lyrics and prompts to the PiAPI Ace Step service via
-   `POST https://api.piapi.ai/api/v1/task` and polls `GET /api/v1/task/{task_id}`
-   until completion.
+```bash
+python3 -m venv omniwizz-env
+source omniwizz-env/bin/activate
+pip install -r backend/requirements.txt  # use requirements.txt for full DiffRhythm stack
+```
 
-3. **Run the API**
+Set environment variables before running:
 
-   ```bash
-   cd backend
-   uvicorn server:app --reload
-   ```
+- `OPENAI_API_KEY` – GPT‑4.1
+- `PIAPI_KEY` – Ace Step via PiAPI
+- `NANO_BANANA_API_KEY` – Google Gemini image generation
+- `MUSIC_AI_API_KEY` – Music AI chord transcription
+- `MUSICAI_CHORD_WORKFLOW` – optional workflow id for Music AI
+- `DATABASE_URL` – optional SQLModel DB URL (defaults to `sqlite:///./omni_logs.db`)
+- `LOG_DOWNLOAD_KEY` – API key for `/dev/download-logs`
+- `TEST_MODE` – set `true` to use mock data; `false` to call real APIs
 
-   The API listens on **[http://localhost:8000](http://localhost:8000)**.
+`.env` files are loaded via `python-dotenv`.
 
-4. **Frontend**
+```bash
+cd backend
+uvicorn server:app --reload
+```
 
-   ```bash
-   cd frontend
-   npm install
-   npm start
-   ```
+The API listens on **http://localhost:8000** and writes run outputs to `output/<run_id>/`.
 
+### Frontend
 
-   Open **[http://localhost:3000](http://localhost:3000)**, then drag & drop an image to generate music.
+```bash
+cd frontend
+npm install
+npm start
+```
+
+Open **http://localhost:3000** and drag an image (optionally with audio) to generate results.
 
 ## Deploying to GitHub Pages
 
-1. Build the production bundle:
-   ```bash
-   cd frontend
-   npm install
-   npm run build
-   ```
-2. Copy the contents of `frontend/build/` into a new folder named `docs/` at the repository root. Commit this folder to `main`.
-3. On GitHub, open the repository settings → **Pages** and choose **Deploy from a branch** with the `main` branch and `/docs` folder.
-4. Visit `https://<username>.github.io/<repository-name>/` to access OmniWizz.
+```bash
+cd frontend
+npm run build
+cd ..
+rm -rf docs
+cp -r frontend/build docs
+git add .
+git commit -m "Update textbox feature"
+git push
+```
 
+After pushing, enable **Pages** → **Deploy from a branch** using `main` and `/docs`, then visit `https://<username>.github.io/<repository-name>/`.
 
-For offline demos or memory-constrained deployments, enable `TEST_MODE` either in `backend/config.py` or via an environment variable. This skips calling the remote GPT-4.1-mini and Ace Step (PiAPI) services so the API and frontend can run without external dependencies.
+## Testing
 
----
+```bash
+pytest
+```
 
 ## Contributing & License
 
-- Core orchestration code: **MIT License**.  
-- **DiffRhythm** (full music generation model): included under Apache 2.0 — see `DiffRhythm/LICENSE.md`.  
-  - Upstream repository: https://github.com/ASLP-lab/DiffRhythm  
-- Contributions welcome: add new modality modules in `backend/pipeline.py` and UI components.
+- Core orchestration code: **MIT License**
+- **DiffRhythm**: Apache 2.0 – see `DiffRhythm/LICENSE.md`
+- Contributions welcome: add new modality modules in `backend/pipeline.py` and UI components
 
----
