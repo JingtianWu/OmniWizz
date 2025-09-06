@@ -20,7 +20,7 @@ from log_db import (
 
 from pipeline import (
     _make_run_dir,
-    generate_music_from_image,
+    prepare_music_from_image,
     generate_tags_from_image,
     generate_images_from_image,
 )
@@ -135,10 +135,15 @@ async def generate(
         # 3c) Music last (async)
         if "music" in modes_set:
             folder = run_dir.name
-            background_tasks.add_task(
-                generate_music_from_image,
+            assistant_reply, _, _ = prepare_music_from_image(
                 str(img_path),
                 language,
+                run_dir,
+                str(audio_path) if audio_path else None,
+            )
+            background_tasks.add_task(
+                run_inference,
+                assistant_reply,
                 run_dir,
                 str(audio_path) if audio_path else None,
             )

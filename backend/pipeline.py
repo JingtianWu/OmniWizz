@@ -26,13 +26,18 @@ def _make_run_dir() -> Path:
     return d
 
 
-def generate_music_from_image(
+def prepare_music_from_image(
     image_path: str,
     language: str = "en",
-    run_dir: Path = None,
+    run_dir: Path | None = None,
     audio_path: str | None = None,
-) -> str:
-    # 1) Prepare run_dir
+) -> tuple[str, Path, str | None]:
+    """Return (assistant_reply, out_dir, style_audio_path).
+
+    This performs all preprocessing steps (chord transcription, LLM prompt
+    creation, etc.) but does not invoke the music inference API.  It ensures a
+    valid assistant reply is produced even if intermediate steps fail."""
+
     out_dir = run_dir or _make_run_dir()
     shutil.copy2(image_path, out_dir / Path(image_path).name)
 
@@ -45,9 +50,13 @@ def generate_music_from_image(
         except Exception as e:
             print(f"Chord transcription failed: {e}")
 
-    # 2) LLM → prompt + lyrics
     uri = _to_data_url(image_path)
-    proc = ImageToLyricsProcessor(uri, language, chords)
+    try:
+        proc = ImageToLyricsProcessor(uri, language, chords)
+    except Exception as e:
+        print(f"Processor init failed: {e}; using mock processor")
+        proc = ImageToLyricsProcessor(uri, language, chords=None)
+
     try:
         raw = proc.generate()
     except Exception as e:
@@ -65,19 +74,36 @@ def generate_music_from_image(
         raw = proc._mock_generate()
         prompt, lyrics = proc._postprocess(raw)
 
-    # 3) Store prompt for later reference
     with open(out_dir / "prompt.txt", "w", encoding="utf-8") as f:
         f.write(prompt)
 
-    # 4) Assemble assistant reply for Ace Step
     assistant_reply = f"**Music Prompt:** {prompt}\n\n**Lyrics:**\n{lyrics}"
+    return assistant_reply, out_dir, audio_path
 
-    # 5) Inference (or mock)
+
+def generate_music_from_image(
+    image_path: str,
+    language: str = "en",
+    run_dir: Path | None = None,
+    audio_path: str | None = None,
+) -> str:
+    assistant_reply, out_dir, style_audio = prepare_music_from_image(
+        image_path, language, run_dir, audio_path
+    )
     try:
-        audio_path = run_inference(assistant_reply, out_dir, style_audio_path=str(audio_path) if audio_path else None)
+        audio_path = run_inference(
+            assistant_reply,
+            out_dir,
+            style_audio_path=str(style_audio) if style_audio else None,
+        )
     except Exception as e:
         print(f"Ace Step failed: {e}; using mock audio")
-        audio_path = run_inference(assistant_reply, out_dir, style_audio_path=str(audio_path) if audio_path else None, use_mock=True)
+        audio_path = run_inference(
+            assistant_reply,
+            out_dir,
+            style_audio_path=str(style_audio) if style_audio else None,
+            use_mock=True,
+        )
     return audio_path
 
 
