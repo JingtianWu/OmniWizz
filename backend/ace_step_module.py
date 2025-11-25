@@ -7,6 +7,7 @@ import requests
 from pathlib import Path
 
 from config import TEST_MODE, PIAPI_KEY
+from udio_module import run_udio_inference
 
 def extract_prompt_and_lyrics(output, lang="en"):
     """Return (prompt, lyrics) parsed from raw model output."""
@@ -67,33 +68,14 @@ def _to_data_url(path: str) -> str:
     return f"data:{mime or 'audio/wav'};base64,{b64}"
 
 
-def run_inference(
-    assistant_reply: str,
-    out_dir: Path,
-    style_audio_path: str | None = None,
-    *,
-    use_mock: bool = TEST_MODE,
-) -> str:
-    """
-    Generate music using the Ace Step model via PiAPI.
+def _write_mock_audio(out_dir: Path) -> str:
+    mock_wav_path = Path(__file__).parent / "mock_data" / "mock_audio.wav"
+    fake_wav = out_dir / "audio.wav"
+    shutil.copy(mock_wav_path, fake_wav)
+    return str(fake_wav)
 
-    Writes ``lyrics.lrc`` (plain text) and ``audio.wav`` into ``out_dir`` and
-    returns the path to the audio file.
-    """
-    if use_mock:
-        # ==== MOCK MODE ====
-        prompt, lyrics = extract_prompt_and_lyrics(assistant_reply)
-        (out_dir / "lyrics.lrc").write_text(lyrics, encoding="utf-8")
 
-        mock_wav_path = Path(__file__).parent / "mock_data" / "mock_audio.wav"
-        fake_wav = out_dir / "audio.wav"
-        shutil.copy(mock_wav_path, fake_wav)
-        return str(fake_wav)
-
-    # ==== REAL MODE ====
-    prompt, lyrics = extract_prompt_and_lyrics(assistant_reply)
-    (out_dir / "lyrics.lrc").write_text(lyrics, encoding="utf-8")
-
+def _run_ace_step(prompt: str, lyrics: str, out_dir: Path, style_audio_path: str | None):
     input_payload = {
         "style_prompt": prompt,
         "lyrics": lyrics if lyrics.strip() else "[inst]",
@@ -149,3 +131,34 @@ def run_inference(
             raise RuntimeError(f"Ace Step task failed: {status}")
         time.sleep(5)
     raise TimeoutError("Ace Step API timed out")
+
+
+def run_inference(
+    assistant_reply: str,
+    out_dir: Path,
+    style_audio_path: str | None = None,
+    *,
+    use_mock: bool = TEST_MODE,
+) -> str:
+    """
+    Generate music using the Ace Step model via PiAPI, with Udio fallback.
+
+    Writes ``lyrics.lrc`` (plain text) and ``audio.wav`` into ``out_dir`` and
+    returns the path to the audio file.
+    """
+    prompt, lyrics = extract_prompt_and_lyrics(assistant_reply)
+    (out_dir / "lyrics.lrc").write_text(lyrics, encoding="utf-8")
+
+    if use_mock:
+        return _write_mock_audio(out_dir)
+
+    try:
+        return _run_ace_step(prompt, lyrics, out_dir, style_audio_path)
+    except Exception as ace_err:
+        print(f"Ace Step failed: {ace_err}; waiting 5s before Udio fallback")
+        time.sleep(5)
+        try:
+            return run_udio_inference(prompt, lyrics, out_dir, style_audio_path)
+        except Exception as udio_err:
+            print(f"Udio fallback failed: {udio_err}; using mock audio")
+            return _write_mock_audio(out_dir)
