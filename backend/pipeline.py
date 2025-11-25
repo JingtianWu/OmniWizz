@@ -12,7 +12,8 @@ from llm_processors import (
     ImageToTagsProcessor,
     ImageToVisualEntitiesProcessor,
 )
-from ace_step_module import run_inference
+from ace_step_module import run_inference as run_ace_inference
+from udio_module import run_inference as run_udio_inference
 from nano_banana_module import generate_images_for_entity
 
 OUTPUT_ROOT = Path(__file__).parent.parent / "output"
@@ -81,6 +82,26 @@ def prepare_music_from_image(
     return assistant_reply, out_dir, audio_path
 
 
+def run_music_inference(
+    assistant_reply: str, out_dir: Path, style_audio_path: str | None = None
+) -> str:
+    try:
+        return run_ace_inference(
+            assistant_reply,
+            out_dir,
+            style_audio_path=style_audio_path,
+            max_wait=95,
+        )
+    except Exception as e:
+        print(f"Ace Step failed or timed out: {e}; switching to Udio")
+
+    try:
+        return run_udio_inference(assistant_reply, out_dir, use_mock=TEST_MODE)
+    except Exception as e:
+        print(f"Udio failed: {e}; using mock audio")
+        return run_udio_inference(assistant_reply, out_dir, use_mock=True)
+
+
 def generate_music_from_image(
     image_path: str,
     language: str = "en",
@@ -90,21 +111,11 @@ def generate_music_from_image(
     assistant_reply, out_dir, style_audio = prepare_music_from_image(
         image_path, language, run_dir, audio_path
     )
-    try:
-        audio_path = run_inference(
-            assistant_reply,
-            out_dir,
-            style_audio_path=str(style_audio) if style_audio else None,
-        )
-    except Exception as e:
-        print(f"Ace Step failed: {e}; using mock audio")
-        audio_path = run_inference(
-            assistant_reply,
-            out_dir,
-            style_audio_path=str(style_audio) if style_audio else None,
-            use_mock=True,
-        )
-    return audio_path
+    return run_music_inference(
+        assistant_reply,
+        out_dir,
+        style_audio_path=str(style_audio) if style_audio else None,
+    )
 
 
 def generate_tags_from_image(
