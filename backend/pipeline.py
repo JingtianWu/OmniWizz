@@ -86,6 +86,11 @@ def run_music_inference(
     assistant_reply: str, out_dir: Path, style_audio_path: str | None = None
 ) -> str:
     try:
+        return run_udio_inference(assistant_reply, out_dir, use_mock=TEST_MODE)
+    except Exception as e:
+        print(f"Udio failed or timed out: {e}; switching to Ace Step")
+
+    try:
         return run_ace_inference(
             assistant_reply,
             out_dir,
@@ -93,12 +98,7 @@ def run_music_inference(
             max_wait=95,
         )
     except Exception as e:
-        print(f"Ace Step failed or timed out: {e}; switching to Udio")
-
-    try:
-        return run_udio_inference(assistant_reply, out_dir, use_mock=TEST_MODE)
-    except Exception as e:
-        print(f"Udio failed: {e}; using mock audio")
+        print(f"Ace Step failed: {e}; using mock audio")
         return run_udio_inference(assistant_reply, out_dir, use_mock=True)
 
 
