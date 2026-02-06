@@ -54,6 +54,33 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
     return { x: e.clientX - r.left, y: e.clientY - r.top };
   };
 
+  // Clone a textbox and compute the text and rect for each rendered line
+  const getRenderedLines = el => {
+    const style = getComputedStyle(el);
+    const clone = el.cloneNode(true);
+    clone.style.position = "absolute";
+    clone.style.visibility = "hidden";
+    clone.style.pointerEvents = "none";
+    clone.style.whiteSpace = "pre-wrap";
+    clone.style.width = style.width;
+    document.body.appendChild(clone);
+
+    const rects = Array.from(clone.getClientRects());
+    const texts = clone.innerText.replace(/\r/g, "").split("\n");
+    const base = clone.getBoundingClientRect();
+    const padLeft = parseFloat(style.paddingLeft) || 0;
+    const padTop = parseFloat(style.paddingTop) || 0;
+    document.body.removeChild(clone);
+
+    return rects.map((r, i) => ({
+      text: texts[i] || "",
+      rect: {
+        left: r.left - base.left - padLeft,
+        top: r.top - base.top - padTop
+      }
+    }));
+  };
+
   /* -------------- History snapshots -------------- */
   const makeSnapshot = () => (
     inkRef.current.toDataURL("image/png")
@@ -481,10 +508,19 @@ const EditorCanvas = forwardRef(function EditorCanvas({ onSubmit, language, setL
     boxes.forEach(b=>{
       const el=document.getElementById(`tb-${b.id}`); if(!el) return;
       const pr=contRef.current.getBoundingClientRect();
-      const r = el.getBoundingClientRect();
-      const x=r.left-pr.left, y=r.top-pr.top+parseInt(el.style.fontSize||b.fs,10);
-      oc.font=`${parseInt(el.style.fontSize||b.fs,10)}px Arial`; oc.fillStyle=b.color;
-      oc.fillText(el.innerText,x,y);
+      const er = el.getBoundingClientRect();
+      const style = getComputedStyle(el);
+      const padL = parseFloat(style.paddingLeft) || 0;
+      const padT = parseFloat(style.paddingTop) || 0;
+      const fontSize = parseFloat(style.fontSize || b.fs);
+      oc.font = `${fontSize}px ${style.fontFamily || "Arial"}`;
+      oc.fillStyle = b.color;
+      const lines = getRenderedLines(el);
+      lines.forEach(l => {
+        const x = er.left - pr.left + padL + l.rect.left;
+        const y = er.top - pr.top + padT + l.rect.top + fontSize;
+        oc.fillText(l.text, x, y);
+      });
     });
     if(hasWave) oc.drawImage(audRef.current,0,H);
     off.toBlob(blob=>onSubmit(new File([blob],"canvas.jpg",{type:"image/jpeg"})),"image/jpeg",0.92);
